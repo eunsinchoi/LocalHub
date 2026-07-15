@@ -47,18 +47,11 @@ onMounted(async () => {
   <section class="recent-posts">
     <div class="header">
       <h2>최근 게시글</h2>
-<<<<<<< HEAD
       <router-link
         to="/recent-posts"
-        class="more-button"
-      >
-        더보기 &gt;
+        class="more-button">더보기 &gt;
       </router-link>
-=======
-      <router-link to="/recent-posts" class="more">더보기 &gt;</router-link>
->>>>>>> feat/home-view
     </div>
-
     <ul class="post-list" aria-live="polite">
       <li v-for="post in recentPosts" :key="post.contentid" class="post-item">
         <router-link
@@ -135,6 +128,8 @@ onMounted(async () => {
 .more-button:focus-visible {
   outline: 3px solid rgba(197, 48, 48, 0.18);
   outline-offset: 2px;
+}
+
 .more {
   color: #c8323e;
   text-decoration: none;
