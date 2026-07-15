@@ -1,0 +1,7 @@
+body {
+  font-family: Arial, sans-serif;
+  color: var(--color-text);
+  background: var(--color-background);
+}
+
+button, input, textarea { font: inherit; }

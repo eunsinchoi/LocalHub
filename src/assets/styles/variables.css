@@ -1,0 +1,7 @@
+:root {
+  /* 서울 대표 색상 및 공통 크기 변수 작성 */
+  --color-primary: #c5323c;
+  --color-background: #ffffff;
+  --color-banner: #f3f3f3;
+  --color-text: #222222;
+}
