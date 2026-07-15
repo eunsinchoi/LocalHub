@@ -16,3 +16,4 @@ import PaginationBar from '../components/board/PaginationBar.vue'
 <style scoped>
 /* 게시판 목록 페이지 스타일 작성 */
 </style>
+260715_0956
