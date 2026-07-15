@@ -1,15 +1,9 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-
 import PasswordModal from '../components/common/PasswordModal.vue'
 import CommentSection from '../components/board/CommentSection.vue'
-
-import {
-  getPosts,
-  deletePost,
-} from '../services/postStorageService.js'
-
+import { getPosts, deletePost } from '../services/postStorageService.js'
 import {
   isBookmarked as checkBookmarked,
   toggleBookmark as updateBookmark,
@@ -17,7 +11,6 @@ import {
 
 const route = useRoute()
 const router = useRouter()
-
 const postId = route.params.id || null
 
 const post = ref(null)
@@ -26,19 +19,15 @@ const showPasswordModal = ref(false)
 
 function loadPost() {
   if (!postId) return
-
   const posts = getPosts()
-
   post.value =
     posts.find((item) => String(item.id) === String(postId))
     || null
-
   isBookmarked.value = checkBookmarked(postId)
 }
 
 function toggleBookmark() {
   if (!postId) return
-
   isBookmarked.value = updateBookmark(postId)
 }
 
@@ -55,9 +44,7 @@ function goEdit() {
 
 function removePost() {
   const ok = confirm('정말로 게시글을 삭제하시겠습니까?')
-
   if (!ok || !postId) return
-
   deletePost(postId)
   router.push({ name: 'BoardList' })
 }
@@ -68,52 +55,74 @@ function sharePost() {
     text: post.value?.content?.slice(0, 120),
     url: window.location.href,
   }
-
   if (navigator.share) {
     navigator.share(shareData).catch(() => {})
     return
   }
-
   navigator.clipboard?.writeText(window.location.href)
   alert('주소가 클립보드에 복사되었습니다.')
 }
 
 onMounted(loadPost)
+
+const boardCrumb = computed(() => {
+  // post.raw.boardName 이 있다면 그 값을, 없으면 기본 '관광지' 사용
+  const category = post.value?.raw?.boardName || '관광지'
+  return `홈 > ${category} > 게시글`
+})
 </script>
 
 <template>
   <div class="post-detail-view">
-    <!-- 상단: 로고(앱 공통 헤더 아래에 위치한다고 가정) 아래에 보드 정보 배치 -->
     <section class="board-info">
-      <div class="board-name">{{ post?.boardName || '게시판' }}</div>
+      <div class="breadcrumb">{{ boardCrumb }}</div>
       <div class="board-sub">게시판 설명 또는 카테고리 정보</div>
     </section>
 
     <article class="post-article">
       <header class="post-header">
-        <h1 class="post-title">
-          {{ post?.title || '제목 없음' }}
-        </h1>
-        <button class="bookmark-btn" :aria-pressed="isBookmarked" @click="toggleBookmark">
-          <span v-if="isBookmarked">★ 북마크</span>
-          <span v-else>☆ 북마크</span>
+        <h1 class="post-title">{{ post?.title || '제목 없음' }}</h1>
+
+        <button
+          class="bookmark-btn"
+          :aria-pressed="isBookmarked"
+          @click="toggleBookmark"
+          :title="isBookmarked ? '북마크 해제' : '북마크'"
+        >
+          <!-- 리본 아이콘 (토글에 따라 색 변경) -->
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path
+              d="M6 2H18V16L12 13L6 16V2Z"
+              :fill="isBookmarked ? '#ef5350' : 'none'"
+              stroke="#333"
+              stroke-width="1.2"
+            />
+          </svg>
         </button>
       </header>
 
       <div class="post-meta">
-        <span class="author">작성자: {{ post?.author || '익명' }}</span>
-        <span class="date">작성일: {{ post?.createdAt || '-' }}</span>
+        <span class="author">작성자: {{ post?.raw?.author || post?.author || '익명' }}</span>
+        <span class="date">작성일: {{ post?.createdAt ? post.createdAt.slice(0,10) : '-' }}</span>
       </div>
 
       <section class="post-content">
-        <img v-if="post?.image" :src="post.image" alt="게시글 이미지" class="post-image" />
-        <div class="content-text" v-html="post?.content || ''"></div>
+        <img v-if="post?.raw?.image || post?.image" :src="post?.raw?.image || post.image" alt="게시글 이미지" class="post-image" />
+        <div class="content-text" v-html="post?.content || post?.raw?.content || ''"></div>
       </section>
 
       <footer class="post-footer">
         <div class="footer-left">
           <button class="btn list-btn" @click="goBackToList">목록으로</button>
-          <button class="btn share-btn" @click="sharePost">공유</button>
+          <button class="btn share-btn" @click="sharePost">
+            <!-- 공유 아이콘 -->
+            <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7" stroke="#333" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M16 6l-4-4-4 4" stroke="#333" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M12 2v13" stroke="#333" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            공유
+          </button>
         </div>
 
         <div class="footer-right">
@@ -123,7 +132,7 @@ onMounted(loadPost)
       </footer>
     </article>
 
-    <CommentSection />
+    <CommentSection :post-id="postId" />
     <PasswordModal v-if="showPasswordModal" @close="showPasswordModal = false" />
   </div>
 </template>
@@ -137,20 +146,19 @@ onMounted(loadPost)
   font-family: inherit;
 }
 
-/* 보드 정보: 로고(공통 헤더) 바로 아래 왼쪽에 위치 */
+/* 빵부스러기 */
 .board-info {
   margin-top: 8px;
   margin-bottom: 18px;
 }
-.board-name {
-  font-weight: 700;
-  font-size: 1.05rem;
-  color: #ef5350;
+.breadcrumb {
+  font-size: 0.95rem;
+  color: #666;
+  margin-bottom: 6px;
 }
 .board-sub {
   color: #666;
   font-size: 0.9rem;
-  margin-top: 4px;
 }
 
 /* 제목 + 북마크 */
@@ -168,11 +176,15 @@ onMounted(loadPost)
 }
 .bookmark-btn {
   background: transparent;
-  border: 1px solid #eee;
-  padding: 8px 10px;
+  border: 1px solid transparent;
+  padding: 6px;
   border-radius: 6px;
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
+.bookmark-btn[aria-pressed="true"] svg path { stroke: #ef5350; }
 
 /* 작성자/작성일 */
 .post-meta {
@@ -203,6 +215,7 @@ onMounted(loadPost)
 }
 
 /* 푸터: 왼쪽(목록/공유) 오른쪽(수정/삭제) */
+/* 버튼 테두리 굵기 증가: 가시성 개선 */
 .post-footer {
   display: flex;
   justify-content: space-between;
@@ -217,9 +230,15 @@ onMounted(loadPost)
   padding: 8px 12px;
   border-radius: 6px;
   background: #fafafa;
-  border: 1px solid #e6e6e6;
+  border: 1.6px solid #e6e6e6; /* 기존 1px -> 1.6px */
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
 }
+.btn .icon { display:inline-block; vertical-align:middle; }
+
+/* 개별 컬러 */
 .edit-btn {
   background: #fff9e6;
 }
