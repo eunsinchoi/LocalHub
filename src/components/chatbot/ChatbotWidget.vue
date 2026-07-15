@@ -1,5 +1,9 @@
 <script setup>
-import { nextTick, ref } from 'vue'
+import {
+  nextTick,
+  ref,
+} from 'vue'
+
 import {
   Bot,
   Send,
@@ -13,6 +17,18 @@ import {
   requestChatbotAnswer,
 } from '../../services/chatbotService.js'
 
+import {
+  loadAllLocalData,
+} from '../../services/localDataService.js'
+
+import {
+  getPosts,
+} from '../../services/postStorageService.js'
+
+import {
+  searchItems,
+} from '../../utils/search.js'
+
 const isOpen = ref(false)
 const inputMessage = ref('')
 const isLoading = ref(false)
@@ -23,6 +39,7 @@ const messages = ref([
   {
     id: crypto.randomUUID(),
     role: 'assistant',
+
     content:
       '안녕하세요. LocalHub AI 도우미입니다.\n서울 관광지, 축제, 쇼핑, 여행코스 등에 대해 질문해 주세요.',
   },
@@ -47,18 +64,121 @@ async function scrollToBottom() {
     messageArea.value.scrollHeight
 }
 
-async function sendMessage() {
-  const message = inputMessage.value.trim()
+function addMessage(
+  role,
+  content,
+) {
+  messages.value.push({
+    id: crypto.randomUUID(),
+    role,
+    content,
+  })
+}
 
-  if (!message || isLoading.value) {
+async function safelyLoadLocalData() {
+  try {
+    return await loadAllLocalData()
+  } catch (error) {
+    console.error(
+      '서울 JSON 로딩 오류:',
+      error,
+    )
+
+    return []
+  }
+}
+
+function safelyLoadPosts() {
+  try {
+    const posts = getPosts()
+
+    return Array.isArray(posts)
+      ? posts
+      : []
+  } catch (error) {
+    console.error(
+      '게시글 로딩 오류:',
+      error,
+    )
+
+    return []
+  }
+}
+
+function createFallbackAnswer(
+  localResults,
+  postResults,
+) {
+  if (
+    localResults.length === 0 &&
+    postResults.length === 0
+  ) {
+    return [
+      '관련된 서울 지역 정보와 커뮤니티 게시글을 찾지 못했습니다.',
+      '',
+      '지역명이나 카테고리를 조금 더 구체적으로 입력해 주세요.',
+    ].join('\n')
+  }
+
+  const lines = []
+
+  if (localResults.length > 0) {
+    lines.push(
+      '서울 지역 데이터에서 다음 장소를 찾았습니다.',
+      '',
+    )
+
+    localResults
+      .slice(0, 5)
+      .forEach(
+        (item, index) => {
+          lines.push(
+            `${index + 1}. ${item.title}`,
+            `카테고리: ${item.category || '분류 없음'}`,
+            `주소: ${item.address || '주소 정보 없음'}`,
+            '',
+          )
+        },
+      )
+  }
+
+  if (postResults.length > 0) {
+    lines.push(
+      '관련 커뮤니티 게시글도 확인할 수 있습니다.',
+      '',
+    )
+
+    postResults
+      .slice(0, 5)
+      .forEach(
+        (post, index) => {
+          lines.push(
+            `${index + 1}. ${post.title}`,
+            `카테고리: ${post.category || '기타'}`,
+            '',
+          )
+        },
+      )
+  }
+
+  return lines.join('\n').trim()
+}
+
+async function sendMessage() {
+  const message =
+    inputMessage.value.trim()
+
+  if (
+    !message ||
+    isLoading.value
+  ) {
     return
   }
 
-  messages.value.push({
-    id: crypto.randomUUID(),
-    role: 'user',
-    content: message,
-  })
+  addMessage(
+    'user',
+    message,
+  )
 
   inputMessage.value = ''
   errorMessage.value = ''
@@ -67,22 +187,85 @@ async function sendMessage() {
   await scrollToBottom()
 
   try {
-    const answer = await requestChatbotAnswer(
-      message,
-      [],
+    const [
+      localData,
+      posts,
+    ] = await Promise.all([
+      safelyLoadLocalData(),
+
+      Promise.resolve(
+        safelyLoadPosts(),
+      ),
+    ])
+
+    const localResults =
+      searchItems(
+        localData,
+        message,
+        5,
+      )
+
+    const postResults =
+      searchItems(
+        posts,
+        message,
+        5,
+      )
+
+    let answer = ''
+
+    if (hasOpenAiApiKey()) {
+      try {
+        answer =
+          await requestChatbotAnswer(
+            message,
+            localResults,
+            postResults,
+          )
+      } catch (error) {
+        console.error(
+          'LLM 답변 생성 오류:',
+          {
+            message:
+              error?.message,
+
+            status:
+              error?.status,
+
+            requestId:
+              error?.requestId,
+          },
+        )
+
+        answer =
+          createFallbackAnswer(
+            localResults,
+            postResults,
+          )
+      }
+    } else {
+      answer =
+        createFallbackAnswer(
+          localResults,
+          postResults,
+        )
+    }
+
+    addMessage(
+      'assistant',
+      answer,
+    )
+  } catch (error) {
+    console.error(
+      '챗봇 전체 처리 오류:',
+      error,
     )
 
-    messages.value.push({
-      id: crypto.randomUUID(),
-      role: 'assistant',
-      content: answer,
-    })
-  } catch (error) {
     errorMessage.value =
-      error?.message ||
-      '답변을 불러오지 못했습니다.'
+      '질문을 처리하지 못했습니다. 잠시 후 다시 시도해 주세요.'
   } finally {
     isLoading.value = false
+
     await scrollToBottom()
   }
 }
@@ -98,7 +281,6 @@ function handleEnter(event) {
 </script>
 
 <template>
-  <!-- 챗봇 대화창 -->
   <Transition name="chatbot-window">
     <section
       v-if="isOpen"
@@ -150,7 +332,10 @@ function handleEnter(event) {
           ]"
         >
           <div
-            v-if="chatMessage.role === 'assistant'"
+            v-if="
+              chatMessage.role ===
+              'assistant'
+            "
             class="assistant-icon"
           >
             <Bot :size="17" />
@@ -174,7 +359,9 @@ function handleEnter(event) {
             <Bot :size="17" />
           </div>
 
-          <div class="message-bubble loading-bubble">
+          <div
+            class="message-bubble loading-bubble"
+          >
             <span></span>
             <span></span>
             <span></span>
@@ -227,12 +414,12 @@ function handleEnter(event) {
     </section>
   </Transition>
 
-  <!-- Bot 아이콘 플로팅 버튼 -->
   <button
     type="button"
     class="chatbot-floating-button"
     :class="{
-      'chatbot-floating-button--open': isOpen,
+      'chatbot-floating-button--open':
+        isOpen,
     }"
     :aria-label="
       isOpen
@@ -274,10 +461,10 @@ function handleEnter(event) {
   padding: 0;
 
   color: #ffffff;
-
   background: #c8323e;
   border: none;
   border-radius: 50%;
+
   box-shadow:
     0 10px 24px rgba(111, 24, 31, 0.28),
     0 3px 8px rgba(0, 0, 0, 0.12);
@@ -292,16 +479,7 @@ function handleEnter(event) {
 
 .chatbot-floating-button:hover {
   background: #b62a35;
-
-  box-shadow:
-    0 13px 28px rgba(111, 24, 31, 0.34),
-    0 4px 10px rgba(0, 0, 0, 0.14);
-
   transform: translateY(-3px);
-}
-
-.chatbot-floating-button:active {
-  transform: translateY(0);
 }
 
 .chatbot-floating-button--open {
@@ -339,6 +517,7 @@ function handleEnter(event) {
   background: #ffffff;
   border: 1px solid #e3e3e3;
   border-radius: 18px;
+
   box-shadow:
     0 22px 55px rgba(0, 0, 0, 0.18),
     0 5px 16px rgba(0, 0, 0, 0.08);
@@ -353,6 +532,7 @@ function handleEnter(event) {
   padding: 14px 16px 14px 18px;
 
   color: #ffffff;
+
   background:
     linear-gradient(
       135deg,
@@ -387,12 +567,10 @@ function handleEnter(event) {
 
 .chatbot-title {
   display: block;
-
   margin-bottom: 5px;
 
   font-size: 15px;
   font-weight: 700;
-  letter-spacing: -0.3px;
 }
 
 .chatbot-status {
@@ -428,10 +606,6 @@ function handleEnter(event) {
   border-radius: 10px;
 
   cursor: pointer;
-}
-
-.chatbot-close-button:hover {
-  background: rgba(255, 255, 255, 0.22);
 }
 
 .chatbot-message-area {
@@ -479,7 +653,7 @@ function handleEnter(event) {
 }
 
 .message-bubble {
-  max-width: 76%;
+  max-width: 78%;
   margin: 0;
   padding: 11px 13px;
 
@@ -522,7 +696,11 @@ function handleEnter(event) {
   background: #999999;
   border-radius: 50%;
 
-  animation: loading-dot 1.2s infinite ease-in-out;
+  animation:
+    loading-dot
+    1.2s
+    infinite
+    ease-in-out;
 }
 
 .loading-bubble span:nth-child(2) {
@@ -582,15 +760,13 @@ function handleEnter(event) {
   border: 1px solid #dedede;
   border-radius: 12px;
   outline: none;
-
-  transition:
-    border-color 0.2s ease,
-    box-shadow 0.2s ease;
 }
 
 .chatbot-input:focus {
   border-color: #c8323e;
-  box-shadow: 0 0 0 3px rgba(200, 50, 62, 0.1);
+
+  box-shadow:
+    0 0 0 3px rgba(200, 50, 62, 0.1);
 }
 
 .send-button {
@@ -611,15 +787,6 @@ function handleEnter(event) {
   border-radius: 12px;
 
   cursor: pointer;
-
-  transition:
-    background 0.2s ease,
-    transform 0.2s ease;
-}
-
-.send-button:hover:not(:disabled) {
-  background: #b52934;
-  transform: translateY(-1px);
 }
 
 .send-button:disabled {
@@ -639,7 +806,10 @@ function handleEnter(event) {
 .chatbot-window-enter-from,
 .chatbot-window-leave-to {
   opacity: 0;
-  transform: translateY(14px) scale(0.97);
+
+  transform:
+    translateY(14px)
+    scale(0.97);
 }
 
 @keyframes loading-dot {
@@ -674,16 +844,6 @@ function handleEnter(event) {
 
     border: none;
     border-radius: 0;
-  }
-
-  .chatbot-header {
-    padding-top:
-      max(14px, env(safe-area-inset-top));
-  }
-
-  .chatbot-input-area {
-    padding-bottom:
-      max(14px, env(safe-area-inset-bottom));
   }
 }
 </style>

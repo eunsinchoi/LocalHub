@@ -1,18 +1,188 @@
 <script setup>
+import { useRouter } from 'vue-router'
+
 import BoardSearch from '../components/board/BoardSearch.vue'
 import PostTable from '../components/board/PostTable.vue'
 import PaginationBar from '../components/board/PaginationBar.vue'
+
+const router = useRouter()
+
+const moveToWrite = () => {
+  router.push('/board/write')
+}
 </script>
 
 <template>
-  <div class="board-list-view">
-    <h1>게시판 목록</h1>
-    <BoardSearch />
-    <PostTable />
-    <PaginationBar />
-  </div>
+  <main class="board-list-view">
+    <div class="board-container">
+      <!-- 페이지 제목 -->
+      <div class="board-header">
+        <h1 class="board-title">자유게시판</h1>
+        <p class="board-description">
+          지역과 여행에 관한 이야기를 자유롭게 나눠보세요.
+        </p>
+      </div>
+
+      <!-- 검색창 및 글쓰기 버튼 -->
+      <section class="board-toolbar">
+        <div class="search-area">
+          <BoardSearch />
+        </div>
+
+        <button
+          type="button"
+          class="write-button"
+          @click="moveToWrite"
+        >
+          글쓰기
+        </button>
+      </section>
+
+      <!-- 게시글 목록 -->
+      <section class="board-content">
+        <PostTable />
+      </section>
+
+      <!-- 페이지네이션 -->
+      <div class="pagination-area">
+        <PaginationBar />
+      </div>
+    </div>
+  </main>
 </template>
 
 <style scoped>
-/* 게시판 목록 페이지 스타일 작성 */
+.board-list-view {
+  width: 100%;
+  min-height: calc(100vh - 70px);
+  padding: 48px 20px 80px;
+  background-color: #ffffff;
+  box-sizing: border-box;
+}
+
+.board-container {
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+/* 게시판 제목 영역 */
+.board-header {
+  margin-bottom: 32px;
+}
+
+.board-title {
+  margin: 0;
+  color: #222222;
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.board-description {
+  margin: 8px 0 0;
+  color: #777777;
+  font-size: 14px;
+}
+
+/* 검색 및 글쓰기 영역 */
+.board-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.search-area {
+  flex: 1;
+  max-width: 720px;
+}
+
+/* 자식 컴포넌트 최상위 요소가 검색창 전체 너비를 사용하도록 설정 */
+.search-area :deep(> *) {
+  width: 100%;
+}
+
+.write-button {
+  flex-shrink: 0;
+  min-width: 96px;
+  height: 44px;
+  padding: 0 22px;
+  border: 0;
+  border-radius: 4px;
+  background-color: #ef3f36;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    background-color 0.2s ease,
+    transform 0.1s ease;
+}
+
+.write-button:hover {
+  background-color: #d9322a;
+}
+
+.write-button:active {
+  transform: translateY(1px);
+}
+
+.write-button:focus-visible {
+  outline: 3px solid rgba(239, 63, 54, 0.25);
+  outline-offset: 2px;
+}
+
+/* 게시글 테이블 영역 */
+.board-content {
+  width: 100%;
+  overflow-x: auto;
+  border-top: 2px solid #333333;
+}
+
+/* 페이지네이션 영역 */
+.pagination-area {
+  display: flex;
+  justify-content: center;
+  margin-top: 36px;
+}
+
+/* 태블릿 */
+@media (max-width: 768px) {
+  .board-list-view {
+    padding: 32px 16px 60px;
+  }
+
+  .board-title {
+    font-size: 24px;
+  }
+
+  .board-toolbar {
+    align-items: stretch;
+  }
+
+  .search-area {
+    max-width: none;
+  }
+
+  .write-button {
+    height: 42px;
+  }
+}
+
+/* 모바일 */
+@media (max-width: 520px) {
+  .board-toolbar {
+    flex-direction: column;
+  }
+
+  .write-button {
+    width: 100%;
+  }
+
+  .board-content {
+    border-top-width: 1px;
+  }
+}
 </style>
