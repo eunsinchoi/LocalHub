@@ -47,9 +47,11 @@ onMounted(async () => {
   <section class="recent-posts">
     <div class="header">
       <h2>최근 게시글</h2>
-      <router-link to="/recent-posts" class="more">더보기 &gt;</router-link>
+      <router-link
+        to="/recent-posts"
+        class="more-button">더보기 &gt;
+      </router-link>
     </div>
-
     <ul class="post-list" aria-live="polite">
       <li v-for="post in recentPosts" :key="post.contentid" class="post-item">
         <router-link
@@ -88,6 +90,44 @@ onMounted(async () => {
 .header h2 {
   margin: 0;
   font-size: 18px;
+}
+
+.title { flex: 1; font-weight: bold; margin-left: 10px; }
+.category { flex: 0 0 80px; font-size: 12px; color: #555; background-color: #eee; padding: 4px 8px; border-radius: 4px; text-align: center; margin: 0 15px; }
+.date { flex: 0 0 80px; font-size: 13px; color: #999; text-align: right; }
+.more-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  min-width: 76px;
+  height: 32px;
+  padding: 0 14px;
+
+  color: #c53030;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+
+  background: #fff7f7;
+  border: 1px solid #c53030;
+  border-radius: 6px;
+
+  transition:
+    color 0.2s ease,
+    background-color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.more-button:hover {
+  color: #ffffff;
+  background: #c53030;
+  transform: translateY(-1px);
+}
+
+.more-button:focus-visible {
+  outline: 3px solid rgba(197, 48, 48, 0.18);
+  outline-offset: 2px;
 }
 
 .more {
