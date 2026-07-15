@@ -130,10 +130,31 @@ onMounted(() => {
   border-collapse: collapse;
 }
 
-.post-table th,
-.post-table td {
-  padding: 14px 16px;
-  border-bottom: 1px solid #ececec;
+.posts-table thead th {
+  text-align: left;
+  font-weight: 600;
+  padding: 12px 16px;
+  background: transparent;
+  color: #444;
+  border-bottom: 1px solid #eee;
+}
+
+.posts-table tbody td {
+  padding: 12px 16px;
+  border-bottom: 1px solid #f5f5f5;
+  vertical-align: middle;
+  color: #333;
+}
+
+.posts-table tbody tr:hover {
+  background: rgba(255, 85, 85, 0.03);
+  transform: translateY(-1px);
+}
+
+/* Column sizing */
+.num {
+  width: 64px;
+  color: #666;
   text-align: left;
 }
 
@@ -141,5 +162,44 @@ onMounted(() => {
   margin-top: 32px;
   padding: 20px;
   border: 1px solid #eeeeee;
+}
+
+.title-link:hover {
+  text-decoration: underline;
+}
+
+.title {
+  width: 60%;
+  font-weight: 500;
+}
+
+.category {
+  width: 160px;
+  color: #666;
+  text-align: left;
+}
+
+.date {
+  width: 160px;
+  color: #888;
+  text-align: left;
+}
+
+/* Empty row */
+.empty {
+  text-align: center;
+  padding: 18px;
+  color: #777;
+}
+
+/* Responsive adjustments */
+@media (max-width: 720px) {
+  .card {
+    padding: 12px;
+  }
+  .posts-table thead th,
+  .posts-table tbody td {
+    padding: 10px 12px;
+  }
 }
 </style>
