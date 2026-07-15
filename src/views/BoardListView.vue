@@ -136,7 +136,7 @@ function moveToWrite() {
   font-size: 14px;
   font-weight: 700;
 
-  background-color: #ef3f36;
+  background-color: #ef5350;
   border: 0;
   border-radius: 4px;
 
@@ -148,7 +148,7 @@ function moveToWrite() {
 }
 
 .write-button:hover {
-  background-color: #d9322a;
+  background-color: #ef5350;
 }
 
 .board-content {
