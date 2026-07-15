@@ -1,18 +1,204 @@
 <script setup>
+import { computed } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+
 import BoardSearch from '../components/board/BoardSearch.vue'
 import PostTable from '../components/board/PostTable.vue'
 import PaginationBar from '../components/board/PaginationBar.vue'
+
+import { categories } from '../constants/categories.js'
+
+const route = useRoute()
+const router = useRouter()
+
+const currentCategoryKey = computed(() => {
+  return route.params.category || 'tourist'
+})
+
+const currentCategory = computed(() => {
+  return (
+    categories.find((category) => {
+      const key = category.path
+        .split('/')
+        .filter(Boolean)
+        .pop()
+
+      return key === currentCategoryKey.value
+    }) || categories[0]
+  )
+})
+
+const boardTitle = computed(() => {
+  return `${currentCategory.value.name} 게시판`
+})
+
+const boardDescription = computed(() => {
+  return `${currentCategory.value.name}에 관한 이야기를 자유롭게 나눠보세요.`
+})
+
+function moveToWrite() {
+  router.push(`/board/${currentCategoryKey.value}/write`)
+}
 </script>
 
 <template>
-  <div class="board-list-view">
-    <h1>게시판 목록</h1>
-    <BoardSearch />
-    <PostTable />
-    <PaginationBar />
-  </div>
+  <main class="board-list-view">
+    <div class="board-container">
+      <div class="board-header">
+        <h1 class="board-title">
+          {{ boardTitle }}
+        </h1>
+
+        <p class="board-description">
+          {{ boardDescription }}
+        </p>
+      </div>
+
+      <section class="board-toolbar">
+        <div class="search-area">
+          <BoardSearch />
+        </div>
+
+        <button
+          type="button"
+          class="write-button"
+          @click="moveToWrite"
+        >
+          글쓰기
+        </button>
+      </section>
+
+      <section class="board-content">
+        <PostTable />
+      </section>
+
+      <div class="pagination-area">
+        <PaginationBar />
+      </div>
+    </div>
+  </main>
 </template>
 
 <style scoped>
-/* 게시판 목록 페이지 스타일 작성 */
+.board-list-view {
+  width: 100%;
+  min-height: calc(100vh - 70px);
+  padding: 48px 20px 80px;
+  background-color: #ffffff;
+  box-sizing: border-box;
+}
+
+.board-container {
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.board-header {
+  margin-bottom: 32px;
+}
+
+.board-title {
+  margin: 0;
+  color: #222222;
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.board-description {
+  margin: 8px 0 0;
+  color: #777777;
+  font-size: 14px;
+}
+
+.board-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.search-area {
+  flex: 1;
+  max-width: 720px;
+}
+
+.search-area :deep(> *) {
+  width: 100%;
+}
+
+.write-button {
+  flex-shrink: 0;
+  min-width: 96px;
+  height: 44px;
+  padding: 0 22px;
+
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 700;
+
+  background-color: #c8323e;
+  border: 0;
+  border-radius: 4px;
+
+  cursor: pointer;
+
+  transition:
+    background-color 0.2s ease,
+    transform 0.1s ease;
+}
+
+.write-button:hover {
+  background-color: #c8323e;
+}
+
+.board-content {
+  width: 100%;
+  overflow-x: auto;
+  border-top: 2px solid #333333;
+}
+
+.pagination-area {
+  display: flex;
+  justify-content: center;
+  margin-top: 36px;
+}
+
+@media (max-width: 768px) {
+  .board-list-view {
+    padding: 32px 16px 60px;
+  }
+
+  .board-title {
+    font-size: 24px;
+  }
+
+  .board-toolbar {
+    align-items: stretch;
+  }
+
+  .search-area {
+    max-width: none;
+  }
+
+  .write-button {
+    height: 42px;
+  }
+}
+
+@media (max-width: 520px) {
+  .board-toolbar {
+    flex-direction: column;
+  }
+
+  .write-button {
+    width: 100%;
+  }
+
+  .board-content {
+    border-top-width: 1px;
+  }
+}
 </style>
