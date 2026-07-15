@@ -35,7 +35,7 @@
 
 .search-box:hover,
 .search-box:focus-within {
-  border-color: #ef3f36;
+  border-color: #c8323e;
   box-shadow: 0 0 0 3px rgba(239, 63, 54, 0.12);
 }
 
@@ -53,8 +53,14 @@
 }
 
 .search-hint {
-  color: #ef3f36;
+  color: #c8323e;
   font-weight: 700;
   white-space: nowrap;
+}
+.board-content {
+  width: 100%;
+  overflow: hidden;
+
+  border-top: 2px solid #333333;
 }
 </style>
