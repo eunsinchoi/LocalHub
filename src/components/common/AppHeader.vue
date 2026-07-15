@@ -1,14 +1,21 @@
 <script setup>
-import seoulLogo from '../../seoul_logo.png'
+import { ref } from 'vue'
 
-const categories = [
-  { name: '관광지', path: '/board/tourist' },
-  { name: '레포츠', path: '/board/leports' },
-  { name: '문화시설', path: '/board/culture' },
-  { name: '쇼핑', path: '/board/shopping' },
-  { name: '여행코스', path: '/board/course' },
-  { name: '축제공연', path: '/board/festival' },
-]
+import seoulLogo from '../../seoul_logo.png'
+import { categories } from '../../constants/categories.js'
+
+import SearchModal from './SearchModal.vue'
+
+const isSearchOpen = ref(false)
+
+function openSearch() {
+  isSearchOpen.value = true
+}
+
+function closeSearch() {
+  isSearchOpen.value = false
+}
+
 </script>
 
 <template>
@@ -61,6 +68,8 @@ const categories = [
           type="button"
           class="icon-button"
           aria-label="검색"
+          :aria-expanded="isSearchOpen"
+          @click="openSearch"
         >
           <svg
             viewBox="0 0 24 24"
@@ -79,6 +88,10 @@ const categories = [
       </nav>
     </div>
   </header>
+  <SearchModal
+    :is-open="isSearchOpen"
+    @close="closeSearch"
+  />
 </template>
 
 <style scoped>

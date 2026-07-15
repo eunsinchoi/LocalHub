@@ -33,6 +33,36 @@ const moveToWrite = () => {
     name: 'post-write',
     params: { category: currentCategory.value },
   })
+import { categories } from '../constants/categories.js'
+
+const route = useRoute()
+const router = useRouter()
+
+const currentCategoryKey = computed(() => {
+  return route.params.category || 'tourist'
+})
+
+const currentCategory = computed(() => {
+  return (
+    categories.find((category) => {
+      const key = category.path
+        .split('/')
+        .filter(Boolean)
+        .pop()
+
+      return key === currentCategoryKey.value
+    }) || categories[0]
+  )
+})
+
+const boardTitle = computed(() => {
+  return `${currentCategory.value.name} 게시판`
+})
+
+const moveToWrite = () => {
+  router.push(
+    `/board/${currentCategoryKey.value}/write`,
+  )
 }
 </script>
 
@@ -41,6 +71,10 @@ const moveToWrite = () => {
     <div class="board-container">
       <div class="board-header">
         <h1 class="board-title">{{ boardTitle }}</h1>
+        <h1 class="board-title">
+          {{ boardTitle }}
+        </h1>
+
         <p class="board-description">
           {{ boardDescription }}
         </p>
@@ -126,13 +160,20 @@ const moveToWrite = () => {
   min-width: 96px;
   height: 44px;
   padding: 0 22px;
-  border: 0;
-  border-radius: 4px;
-  background-color: #ef3f36;
+
   color: #ffffff;
   font-size: 14px;
   font-weight: 700;
+
+  background-color: #ef3f36;
+  border: 0;
+  border-radius: 4px;
+
   cursor: pointer;
+
+  transition:
+    background-color 0.2s ease,
+    transform 0.1s ease;
 }
 
 .write-button:hover {
