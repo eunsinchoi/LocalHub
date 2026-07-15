@@ -1,13 +1,9 @@
 <script setup>
-import { ref, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
-import PasswordModal from '../common/PasswordModal.vue'
-import CommentSection from './CommentSection.vue'
+import { ref, computed, onMounted } from 'vue';
 
-const route = useRoute()
-const post = ref(null)
-const isLoading = ref(true)
-const error = ref('')
+const allRecentPosts = ref([]);
+const pageSize = 10;
+const currentPage = ref(1);
 
 const fileData = [
   { name: '서울_관광지.json', cat: '관광지' },
@@ -17,178 +13,260 @@ const fileData = [
   { name: '서울_숙박.json', cat: '숙박' },
   { name: '서울_여행코스.json', cat: '여행코스' },
   { name: '서울_축제공연행사.json', cat: '축제공연' }
-]
-
-function formatDate(modifiedtime) {
-  if (!modifiedtime) return ''
-  const s = String(modifiedtime)
-  if (s.length >= 8) return `${s.slice(0,4)}-${s.slice(4,6)}-${s.slice(6,8)}`
-  return s
-}
+];
 
 onMounted(async () => {
-  const id = route.params.id
-  if (!id) {
-    error.value = '잘못된 게시글입니다.'
-    isLoading.value = false
-    return
-  }
-
-  isLoading.value = true
-  error.value = ''
-
-  try {
-    for (const f of fileData) {
-      try {
-        const res = await fetch(`/data/${f.name}`)
-        if (!res.ok) continue
-        const data = await res.json()
-        if (!data || !Array.isArray(data.items)) continue
-
-        const found = data.items.find(
-          (it) => String(it.contentid) === String(id),
-        )
-        if (found) {
-          post.value = { ...found, categoryName: f.cat }
-          break
-        }
-      } catch (e) {
-        // ignore single-file errors, continue others
-        // eslint-disable-next-line no-console
-        console.error('파일 로드 실패', f.name, e)
+  let posts = [];
+  for (const file of fileData) {
+    try {
+      const res = await fetch(`/data/${file.name}`);
+      const data = await res.json();
+      if (data && data.items) {
+        const postsWithCat = data.items.map(post => ({ ...post, categoryName: file.cat }));
+        posts = posts.concat(postsWithCat);
       }
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error(`${file.name} 로드 실패`, err);
     }
-
-    if (!post.value) {
-      error.value = '게시글을 찾을 수 없습니다.'
-    }
-  } catch (e) {
-    error.value = '게시글을 불러오는 중 오류가 발생했습니다.'
-    // eslint-disable-next-line no-console
-    console.error(e)
-  } finally {
-    isLoading.value = false
   }
-})
+  posts.sort((a, b) => {
+    const ma = a.modifiedtime || '';
+    const mb = b.modifiedtime || '';
+    if (mb > ma) return 1;
+    if (mb < ma) return -1;
+    return 0;
+  });
+  allRecentPosts.value = posts;
+});
+
+const totalPages = computed(() => Math.max(1, Math.ceil(allRecentPosts.value.length / pageSize)));
+
+const pagedPosts = computed(() => {
+  const start = (currentPage.value - 1) * pageSize;
+  return allRecentPosts.value.slice(start, start + pageSize);
+});
+
+function formatDate(modifiedtime) {
+  if (!modifiedtime) return '';
+  const s = String(modifiedtime);
+  if (s.length >= 8) return `${s.slice(0,4)}-${s.slice(4,6)}-${s.slice(6,8)}`;
+  return s;
+}
+
+function gotoPage(n) {
+  const p = Math.min(Math.max(1, n), totalPages.value);
+  currentPage.value = p;
+}
+
+function prevPage() {
+  gotoPage(currentPage.value - 1);
+}
+
+function nextPage() {
+  gotoPage(currentPage.value + 1);
+}
+
+function firstPage() {
+  gotoPage(1);
+}
+
+function lastPage() {
+  gotoPage(totalPages.value);
+}
+
+const pagerRange = computed(() => {
+  const total = totalPages.value;
+  const current = currentPage.value;
+  const maxButtons = 7;
+  if (total <= maxButtons) return Array.from({ length: total }, (_, i) => i + 1);
+
+  const range = [];
+  const half = Math.floor(maxButtons / 2);
+  let start = current - half;
+  let end = current + half;
+
+  if (start < 1) {
+    start = 1;
+    end = maxButtons;
+  } else if (end > total) {
+    end = total;
+    start = total - maxButtons + 1;
+  }
+
+  for (let i = start; i <= end; i++) range.push(i);
+  return range;
+});
+
+const isFirst = computed(() => currentPage.value === 1);
+const isLast = computed(() => currentPage.value === totalPages.value);
 </script>
 
 <template>
-  <div class="post-detail-view">
-    <div v-if="isLoading" class="state">게시글을 불러오는 중입니다...</div>
-    <div v-else-if="error" class="state error">{{ error }}</div>
-    <article v-else-if="post" class="post-card">
-      <header class="post-header">
-        <h1 class="post-title">{{ post.title }}</h1>
-        <div class="post-meta">
-          <span class="category" v-if="post.categoryName">{{ post.categoryName }}</span>
-          <span class="date">{{ formatDate(post.modifiedtime) }}</span>
-        </div>
-      </header>
+  <section class="recent-posts-view">
+    <h1>최근 게시글 전체 목록</h1>
 
-      <div class="post-body">
-        <figure v-if="post.firstimage || post.firstimage2" class="post-image">
-          <img :src="post.firstimage || post.firstimage2" :alt="post.title" />
-        </figure>
+    <div class="card">
+      <div class="table-wrap" role="region" aria-label="최근 게시글 목록">
+        <table class="posts-table">
+          <thead>
+            <tr>
+              <th scope="col">No.</th>
+              <th scope="col">제목</th>
+              <th scope="col">카테고리</th>
+              <th scope="col">수정일</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="(post, idx) in pagedPosts" :key="post.contentid ?? (idx + (currentPage-1)*pageSize)">
+              <td class="num">{{ (currentPage - 1) * pageSize + idx + 1 }}</td>
 
-        <dl class="post-info">
-          <div class="info-row" v-if="post.addr1 || post.addr2">
-            <dt>주소</dt>
-            <dd>{{ [post.addr1, post.addr2].filter(Boolean).join(' ') }}</dd>
-          </div>
-          <div class="info-row" v-if="post.tel">
-            <dt>전화</dt>
-            <dd>{{ post.tel }}</dd>
-          </div>
-          <div class="info-row" v-if="post.modifiedtime">
-            <dt>수정일</dt>
-            <dd>{{ formatDate(post.modifiedtime) }}</dd>
-          </div>
-        </dl>
+              <!-- Title navigates to post-detail route -->
+              <td class="title">
+                <router-link
+                  :to="{ name: 'post-detail', params: { id: post.contentid } }"
+                  class="title-link"
+                >
+                  {{ post.title }}
+                </router-link>
+              </td>
+
+              <td class="category">{{ post.categoryName }}</td>
+              <td class="date">{{ formatDate(post.modifiedtime) }}</td>
+            </tr>
+
+            <tr v-if="allRecentPosts.length === 0">
+              <td colspan="4" class="empty">게시글이 없습니다.</td>
+            </tr>
+          </tbody>
+        </table>
       </div>
-    </article>
 
-    <CommentSection v-if="post" />
-    <PasswordModal />
-  </div>
+      <nav class="pagination" aria-label="페이지 네비게이션" v-if="totalPages > 1">
+        <div class="pager-left">
+          <button class="pager-btn" @click="firstPage" :disabled="isFirst" aria-label="맨 앞으로"><<</button>
+          <button class="pager-btn" @click="prevPage" :disabled="isFirst" aria-label="이전 페이지"><</button>
+        </div>
+
+        <ul class="pager-list" role="list">
+          <li v-for="p in pagerRange" :key="p">
+            <button
+              class="pager-number"
+              :class="{ active: p === currentPage }"
+              @click="gotoPage(p)"
+              :aria-current="p === currentPage ? 'page' : null"
+            >
+              {{ p }}
+            </button>
+          </li>
+        </ul>
+
+        <div class="pager-right">
+          <button class="pager-btn" @click="nextPage" :disabled="isLast" aria-label="다음 페이지">></button>
+          <button class="pager-btn" @click="lastPage" :disabled="isLast" aria-label="맨 마지막으로">>></button>
+        </div>
+      </nav>
+    </div>
+  </section>
 </template>
 
 <style scoped>
-.post-detail-view {
+.recent-posts-view {
   padding: 20px;
-  max-width: 960px;
+}
+
+.card {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 6px 18px rgba(12,12,12,0.06);
+  padding: 18px;
+  max-width: 1100px;
   margin: 0 auto;
 }
 
-.state {
-  padding: 24px;
-  text-align: center;
-  color: #666;
+/* Table wrapper makes the table horizontally scrollable on small screens */
+.table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
-.state.error {
-  color: #b00020;
-}
-
-.post-card {
-  background: #fff;
-  border-radius: 10px;
-  padding: 20px;
-  box-shadow: 0 6px 18px rgba(12,12,12,0.06);
-  margin-bottom: 18px;
-}
-
-.post-header {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-bottom: 12px;
-}
-
-.post-title {
-  margin: 0;
-  font-size: 22px;
-  color: #111;
-}
-
-.post-meta {
-  display: flex;
-  gap: 12px;
-  color: #777;
-  font-size: 13px;
-  align-items: center;
-}
-
-.post-image {
-  margin: 12px 0;
-  display: block;
-}
-
-.post-image img {
+/* Basic table styling */
+.posts-table {
   width: 100%;
-  height: auto;
-  border-radius: 8px;
-  object-fit: cover;
+  border-collapse: collapse;
+  min-width: 640px;
 }
 
-.post-info {
-  margin-top: 8px;
-  display: grid;
-  gap: 8px;
-}
-
-.info-row {
-  display: flex;
-  gap: 12px;
-}
-
-dt {
-  min-width: 54px;
-  color: #666;
+.posts-table thead th {
+  text-align: left;
   font-weight: 600;
+  padding: 12px 16px;
+  background: transparent;
+  color: #444;
+  border-bottom: 1px solid #eee;
 }
 
-dd {
-  margin: 0;
+.posts-table tbody td {
+  padding: 12px 16px;
+  border-bottom: 1px solid #f5f5f5;
+  vertical-align: middle;
   color: #333;
+}
+
+.posts-table tbody tr:hover {
+  background: rgba(255, 85, 85, 0.03);
+  transform: translateY(-1px);
+}
+
+/* Column sizing */
+.num {
+  width: 64px;
+  color: #666;
+  text-align: left;
+}
+
+.title-link {
+  color: #1f2937;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.title-link:hover {
+  text-decoration: underline;
+}
+
+.title {
+  width: 60%;
+  font-weight: 500;
+}
+
+.category {
+  width: 160px;
+  color: #666;
+  text-align: left;
+}
+
+.date {
+  width: 160px;
+  color: #888;
+  text-align: left;
+}
+
+/* Empty row */
+.empty {
+  text-align: center;
+  padding: 18px;
+  color: #777;
+}
+
+/* Responsive adjustments */
+@media (max-width: 720px) {
+  .card {
+    padding: 12px;
+  }
+  .posts-table thead th,
+  .posts-table tbody td {
+    padding: 10px 12px;
+  }
 }
 </style>

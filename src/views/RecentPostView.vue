@@ -103,7 +103,7 @@ const isLast = computed(() => currentPage.value === totalPages.value);
 </script>
 
 <template>
-  <section class="recent-posts-page">
+  <section class="recent-posts-view">
     <h1>최근 게시글 전체 목록</h1>
 
     <div class="card">
@@ -120,10 +120,20 @@ const isLast = computed(() => currentPage.value === totalPages.value);
           <tbody>
             <tr v-for="(post, idx) in pagedPosts" :key="post.contentid ?? (idx + (currentPage-1)*pageSize)">
               <td class="num">{{ (currentPage - 1) * pageSize + idx + 1 }}</td>
-              <td class="title">{{ post.title }}</td>
+
+              <td class="title">
+                <router-link
+                  :to="{ name: 'post-detail', params: { id: post.contentid } }"
+                  class="title-link"
+                >
+                  {{ post.title }}
+                </router-link>
+              </td>
+
               <td class="category">{{ post.categoryName }}</td>
               <td class="date">{{ formatDate(post.modifiedtime) }}</td>
             </tr>
+
             <tr v-if="allRecentPosts.length === 0">
               <td colspan="4" class="empty">게시글이 없습니다.</td>
             </tr>
@@ -160,14 +170,8 @@ const isLast = computed(() => currentPage.value === totalPages.value);
 </template>
 
 <style scoped>
-.recent-posts-page {
+.recent-posts-view {
   padding: 20px;
-}
-
-h1 {
-  margin: 0 0 14px 0;
-  font-size: 20px;
-  color: #222;
 }
 
 .card {
@@ -179,7 +183,6 @@ h1 {
   margin: 0 auto;
 }
 
-/* Table */
 .table-wrap {
   overflow-x: auto;
 }
@@ -194,8 +197,8 @@ h1 {
   text-align: left;
   font-weight: 600;
   padding: 12px 16px;
-  border-bottom: 1px solid #eee;
   color: #444;
+  border-bottom: 1px solid #eee;
 }
 
 .posts-table tbody td {
@@ -204,96 +207,29 @@ h1 {
   color: #333;
 }
 
-.posts-table tbody tr:hover {
-  background: rgba(255,85,85,0.03);
+.title-link {
+  color: #1f2937;
+  text-decoration: none;
+  font-weight: 500;
 }
 
-/* columns */
+.title-link:hover {
+  text-decoration: underline;
+}
+
 .num { width: 64px; color:#666; }
 .title { width: 60%; font-weight:500; }
 .category { width: 160px; color:#666; }
 .date { width: 160px; color:#888; }
 
-/* Pagination layout */
-.pagination {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 14px 6px 0;
-  flex-wrap: nowrap;
-}
-
-/* left/right groups */
-.pager-left,
-.pager-right {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
-
-/* center page numbers */
-.pager-list {
-  display: flex;
-  gap: 6px;
-  list-style: none;
-  padding: 0;
-  margin: 0 auto;
-  align-items: center;
-}
-
-.pager-number,
-.pager-btn {
-  background: #fff;
-  border: 1px solid #e6e6e6;
-  color: #333;
-  padding: 8px 10px;
-  border-radius: 8px;
-  cursor: pointer;
-  min-width: 40px;
-  transition: background 120ms, transform 120ms, box-shadow 120ms;
-}
-
-.pager-number:hover,
-.pager-btn:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 18px rgba(12,12,12,0.06);
-  background: #fff7f7;
-}
-
-.pager-number.active {
-  background: #ff5555;
-  color: #fff;
-  border-color: #ff5555;
-  transform: none;
-  box-shadow: none;
-}
-
-.pager-btn[disabled],
-.pager-number[disabled] {
-  opacity: 0.5;
-  cursor: default;
-  transform: none;
-  box-shadow: none;
-}
-
-/* small screens */
-@media (max-width: 520px) {
-  .pagination {
-    gap: 8px;
-    padding-top: 10px;
-  }
-  .pager-list {
-    margin: 0 8px;
-    gap: 4px;
-  }
-  .pager-number, .pager-btn { padding: 6px 8px; min-width: 34px; }
-}
-
-/* empty row */
 .empty {
   text-align: center;
   padding: 18px;
   color: #777;
+}
+
+@media (max-width: 720px) {
+  .card { padding: 12px; }
+  .posts-table thead th, .posts-table tbody td { padding: 10px 12px; }
 }
 </style>
