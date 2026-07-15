@@ -6,6 +6,8 @@ import PostDetailView from '../views/PostDetailView.vue'
 import PostWriteView from '../views/PostWriteView.vue'
 import PostEditView from '../views/PostEditView.vue'
 import BookmarkView from '../views/BookmarkView.vue'
+import recentPostView from '../views/RecentPostView.vue'
+
 
 const routes = [
   { path: '/', name: 'home', component: HomeView },
@@ -14,6 +16,7 @@ const routes = [
   { path: '/write/:category', name: 'post-write', component: PostWriteView },
   { path: '/posts/:id/edit', name: 'post-edit', component: PostEditView },
   { path: '/bookmarks', name: 'bookmarks', component: BookmarkView },
+  { path: '/recent-posts', name: 'recent-posts', component: recentPostView }
 ]
 
 const router = createRouter({

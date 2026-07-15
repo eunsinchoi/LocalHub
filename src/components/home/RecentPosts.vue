@@ -1,10 +1,10 @@
-<script setup>
+<<script setup>
 import { ref, onMounted } from 'vue';
 
 const recentPosts = ref([]);
 
 onMounted(async () => {
-  // 파일명을 카테고리 이름으로 바로 사용하기 위해 객체로 관리합니다.
+  // ... (기존 데이터 로딩 로직 동일)
   const fileData = [
     { name: '서울_관광지.json', cat: '관광지' },
     { name: '서울_레포츠.json', cat: '레포츠' },
@@ -21,15 +21,11 @@ onMounted(async () => {
       const response = await fetch(`/data/${file.name}`);
       const data = await response.json();
       if (data && data.items) {
-        // 각 게시글에 카테고리 이름을 추가해서 저장
         const postsWithCat = data.items.map(post => ({ ...post, categoryName: file.cat }));
         allPosts = [...allPosts, ...postsWithCat];
       }
-    } catch (e) {
-      console.error(`${file.name} 로드 실패`);
-    }
+    } catch (e) { console.error(`${file.name} 로드 실패`); }
   }
-  
   allPosts.sort((a, b) => b.modifiedtime - a.modifiedtime);
   recentPosts.value = allPosts.slice(0, 5);
 });
@@ -39,12 +35,13 @@ onMounted(async () => {
   <section class="recent-posts">
     <div class="header">
       <h2>최근 게시글</h2>
-      <a href="#">더보기 ></a>
+      <router-link to="/recent-posts">더보기 ></router-link>
     </div>
     <ul class="post-list">
-      <li v-for="post in recentPosts" :key="post.contentid" class="post-item">
+      <!-- (post, index)로 순번을 가져옵니다 -->
+      <li v-for="(post, index) in recentPosts" :key="post.contentid" class="post-item">
+        <span class="number">{{ index + 1 }}</span>
         <span class="title">{{ post.title }}</span>
-        <!-- 우리가 직접 넣어준 categoryName을 표시 -->
         <span class="category">{{ post.categoryName }}</span>
         <span class="date">{{ post.modifiedtime ? post.modifiedtime.substring(0, 8) : '' }}</span>
       </li>
@@ -53,12 +50,24 @@ onMounted(async () => {
 </template>
 
 <style scoped>
-/* 기존 스타일과 동일합니다 */
-.recent-posts { padding: 30px; max-width: 800px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 12px; background-color: #fff; }
+.recent-posts {
+  width: 100%;
+  margin-top: 24px;
+  padding: 30px;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  background: #fff;
+  box-sizing: border-box;
+}
+
 .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-.post-list { list-style: none; padding: 0; }
-.post-item { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid #f0f0f0; }
-.title { flex: 2; font-weight: bold; }
+.post-list { list-style: none; padding: 0; margin: 0; }
+.post-item { display: flex; align-items: center; padding: 15px 0; border-bottom: 1px solid #f0f0f0; }
+
+/* 번호 스타일 */
+.number { flex: 0 0 40px; font-weight: bold; color: #333; }
+
+.title { flex: 1; font-weight: bold; margin-left: 10px; }
 .category { flex: 0 0 80px; font-size: 12px; color: #555; background-color: #eee; padding: 4px 8px; border-radius: 4px; text-align: center; margin: 0 15px; }
 .date { flex: 0 0 80px; font-size: 13px; color: #999; text-align: right; }
 </style>
