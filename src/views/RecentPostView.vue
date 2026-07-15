@@ -1,5 +1,6 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue'
+import PaginationBar from '../components/board/PaginationBar.vue'
 
 const allRecentPosts = ref([]);
 const pageSize = 10;
@@ -140,31 +141,16 @@ const isLast = computed(() => currentPage.value === totalPages.value);
           </tbody>
         </table>
       </div>
-
-      <nav class="pagination" aria-label="페이지 네비게이션" v-if="totalPages > 1">
-        <div class="pager-left">
-          <button class="pager-btn" @click="firstPage" :disabled="isFirst" aria-label="맨 앞으로"><<</button>
-          <button class="pager-btn" @click="prevPage" :disabled="isFirst" aria-label="이전 페이지"><</button>
-        </div>
-
-        <ul class="pager-list" role="list">
-          <li v-for="p in pagerRange" :key="p">
-            <button
-              class="pager-number"
-              :class="{ active: p === currentPage }"
-              @click="gotoPage(p)"
-              :aria-current="p === currentPage ? 'page' : null"
-            >
-              {{ p }}
-            </button>
-          </li>
-        </ul>
-
-        <div class="pager-right">
-          <button class="pager-btn" @click="nextPage" :disabled="isLast" aria-label="다음 페이지">></button>
-          <button class="pager-btn" @click="lastPage" :disabled="isLast" aria-label="맨 마지막으로">>></button>
-        </div>
-      </nav>
+      <div
+        v-if="totalPages > 1"
+        class="pagination-wrap"
+      >
+        <PaginationBar
+          :current-page="currentPage"
+          :total-pages="totalPages"
+          @change="gotoPage"
+        />
+      </div>
     </div>
   </section>
 </template>
