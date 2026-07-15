@@ -1,6 +1,3 @@
-Here's the updated RecentPosts.vue with the post title turned into a link to the post detail page (uses the `post-detail` route):
-
-```vue
 <script setup>
 import { ref, onMounted } from 'vue';
 
@@ -55,9 +52,17 @@ onMounted(async () => {
     <ul class="post-list" aria-live="polite">
       <li v-for="post in recentPosts" :key="post.contentid" class="post-item">
         <router-link
-          class="title"
-          :to="{ name: 'post-detail', params: { id: post.contentid } }"
-        >
+class="title"
+  :to="{
+    name: 'post-detail',
+    params: {
+      id: String(post.contentid)
+    },
+    query: {
+      source: 'tour'
+    }
+  }"
+>
           {{ post.title }}
         </router-link>
 
