@@ -1,29 +1,45 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+
 import PasswordModal from '../components/common/PasswordModal.vue'
 import CommentSection from '../components/board/CommentSection.vue'
-import postStorageService from '../services/postStorageService.js'
-import bookmarkService from '../services/bookmarkService.js'
+
+import {
+  getPosts,
+  deletePost,
+} from '../services/postStorageService.js'
+
+import {
+  isBookmarked as checkBookmarked,
+  toggleBookmark as updateBookmark,
+} from '../services/bookmarkService.js'
 
 const route = useRoute()
 const router = useRouter()
+
 const postId = route.params.id || null
 
 const post = ref(null)
 const isBookmarked = ref(false)
 const showPasswordModal = ref(false)
 
-async function loadPost() {
+function loadPost() {
   if (!postId) return
-  post.value = await postStorageService.getPostById(postId)
-  isBookmarked.value = bookmarkService.isBookmarked(postId)
+
+  const posts = getPosts()
+
+  post.value =
+    posts.find((item) => String(item.id) === String(postId))
+    || null
+
+  isBookmarked.value = checkBookmarked(postId)
 }
 
 function toggleBookmark() {
   if (!postId) return
-  isBookmarked.value = !isBookmarked.value
-  bookmarkService.toggleBookmark(postId)
+
+  isBookmarked.value = updateBookmark(postId)
 }
 
 function goBackToList() {
@@ -31,14 +47,18 @@ function goBackToList() {
 }
 
 function goEdit() {
-  router.push({ name: 'PostEdit', params: { id: postId } })
+  router.push({
+    name: 'PostEdit',
+    params: { id: postId },
+  })
 }
 
-async function removePost() {
+function removePost() {
   const ok = confirm('정말로 게시글을 삭제하시겠습니까?')
-  if (!ok) return
-  // 비밀번호 확인이 필요한 구현이면 showPasswordModal.value = true
-  await postStorageService.deletePost(postId)
+
+  if (!ok || !postId) return
+
+  deletePost(postId)
   router.push({ name: 'BoardList' })
 }
 
@@ -46,15 +66,16 @@ function sharePost() {
   const shareData = {
     title: post.value?.title || '게시글',
     text: post.value?.content?.slice(0, 120),
-    url: window.location.href
+    url: window.location.href,
   }
+
   if (navigator.share) {
     navigator.share(shareData).catch(() => {})
-  } else {
-    // 복사 fallback
-    navigator.clipboard?.writeText(window.location.href)
-    alert('주소가 클립보드에 복사되었습니다.')
+    return
   }
+
+  navigator.clipboard?.writeText(window.location.href)
+  alert('주소가 클립보드에 복사되었습니다.')
 }
 
 onMounted(loadPost)
