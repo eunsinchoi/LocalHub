@@ -62,3 +62,10 @@ const posts = [
   color: #222222;
   font-weight: 600;
 }
+
+.post-date {
+  width: 140px;
+  color: #777777;
+  font-weight: 500;
+}
+</style>
