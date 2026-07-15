@@ -93,7 +93,7 @@ const boardCrumb = computed(() => {
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path
               d="M6 2H18V16L12 13L6 16V2Z"
-              :fill="isBookmarked ? '#ef5350' : 'none'"
+              :fill="isBookmarked ? '#c8323e' : 'none'"
               stroke="#333"
               stroke-width="1.2"
             />
@@ -184,7 +184,7 @@ const boardCrumb = computed(() => {
   align-items: center;
   justify-content: center;
 }
-.bookmark-btn[aria-pressed="true"] svg path { stroke: #ef5350; }
+.bookmark-btn[aria-pressed="true"] svg path { stroke: #c8323e; }
 
 /* 작성자/작성일 */
 .post-meta {

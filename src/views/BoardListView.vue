@@ -32,6 +32,10 @@ const boardTitle = computed(() => {
   return `${currentCategory.value.name} 게시판`
 })
 
+const boardDescription = computed(() => {
+  return `${currentCategory.value.name}에 관한 이야기를 자유롭게 나눠보세요.`
+})
+
 function moveToWrite() {
   router.push(`/board/${currentCategoryKey.value}/write`)
 }
@@ -41,7 +45,6 @@ function moveToWrite() {
   <main class="board-list-view">
     <div class="board-container">
       <div class="board-header">
-        <h1 class="board-title">{{ boardTitle }}</h1>
         <h1 class="board-title">
           {{ boardTitle }}
         </h1>
@@ -136,7 +139,7 @@ function moveToWrite() {
   font-size: 14px;
   font-weight: 700;
 
-  background-color: #ef5350;
+  background-color: #c8323e;
   border: 0;
   border-radius: 4px;
 
@@ -148,7 +151,7 @@ function moveToWrite() {
 }
 
 .write-button:hover {
-  background-color: #ef5350;
+  background-color: #c8323e;
 }
 
 .board-content {

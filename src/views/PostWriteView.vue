@@ -56,7 +56,8 @@ function getCategoryKey(category) {
 }
 
 function moveToCategory(category) {
-  router.push(category.path)
+  const categoryKey = getCategoryKey(category)
+  router.push(`/board/${categoryKey}/write`)
 }
 
 function clearErrors() {
@@ -611,15 +612,15 @@ function cancelWrite() {
 }
 
 .category-button:hover {
-  color: #c53030;
-  border-color: #c53030;
+  color: #c8323e;
+  border-color: #c8323e;
 }
 
 .category-button.active {
   color: #ffffff;
 
-  background: #c53030;
-  border-color: #c53030;
+  background: #c8323e;
+  border-color: #c8323e;
 }
 
 /* 경로 */
@@ -641,7 +642,7 @@ function cancelWrite() {
 }
 
 .breadcrumb-link:hover {
-  color: #c53030;
+  color: #c8323e;
   text-decoration: underline;
 }
 
@@ -688,13 +689,13 @@ function cancelWrite() {
   margin-bottom: 10px;
   padding: 0 12px;
 
-  color: #c53030;
+  color: #c8323e;
   font-size: 13px;
   font-weight: 700;
 
   background: #fff5f5;
   border:
-    1px solid #c53030;
+    1px solid #c8323e;
   border-radius: 5px;
 }
 
@@ -716,7 +717,7 @@ function cancelWrite() {
 
 .required-guide span,
 .required-mark {
-  color: #c53030;
+  color: #c8323e;
 }
 
 /* 폼 */
@@ -776,7 +777,7 @@ function cancelWrite() {
 
 .form-input:focus,
 .form-textarea:focus {
-  border-color: #c53030;
+  border-color: #c8323e;
   box-shadow:
     0 0 0 3px
     rgba(197, 48, 48, 0.1);
@@ -784,7 +785,7 @@ function cancelWrite() {
 
 .form-input.error,
 .form-textarea.error {
-  border-color: #d92d20;
+  border-color: #c8323e;
 }
 
 .form-input::placeholder,
@@ -812,7 +813,7 @@ function cancelWrite() {
 .error-message {
   margin: 7px 0 0;
 
-  color: #d92d20;
+  color: #c8323e;
   font-size: 12px;
 }
 
@@ -878,14 +879,14 @@ function cancelWrite() {
 .submit-button {
   color: #ffffff;
 
-  background: #c53030;
+  background: #c8323e;
   border:
-    1px solid #c53030;
+    1px solid #c8323e;
 }
 
 .submit-button:hover {
-  background: #a92727;
-  border-color: #a92727;
+  background: #c8323e;
+  border-color: #c8323e;
 }
 
 .cancel-button:disabled,
