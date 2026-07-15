@@ -135,6 +135,7 @@ onMounted(async () => {
 .more-button:focus-visible {
   outline: 3px solid rgba(197, 48, 48, 0.18);
   outline-offset: 2px;
+}
 .more {
   color: #c8323e;
   text-decoration: none;
