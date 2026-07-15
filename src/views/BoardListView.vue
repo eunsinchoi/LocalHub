@@ -1,29 +1,51 @@
 <script setup>
-import { useRouter } from 'vue-router'
+import { computed } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 
+import { getCategoryName } from '../services/localDataService'
 import BoardSearch from '../components/board/BoardSearch.vue'
 import PostTable from '../components/board/PostTable.vue'
 import PaginationBar from '../components/board/PaginationBar.vue'
 
+const route = useRoute()
 const router = useRouter()
 
+const currentCategory = computed(() => route.params.category || 'tourist')
+const currentCategoryName = computed(
+  () => getCategoryName(currentCategory.value) || '게시판',
+)
+const boardTitle = computed(() => `${currentCategoryName.value} 게시판`)
+const boardDescription = computed(() => {
+  const descriptions = {
+    tourist: '관광지 관련 정보와 여행 경험을 나눠보세요.',
+    leports: '레포츠 일정과 추천 코스를 공유해보세요.',
+    culture: '문화시설 방문 후기를 남겨보세요.',
+    shopping: '쇼핑 추천 포인트와 할인 정보를 나눠보세요.',
+    course: '여행 코스와 일정 계획을 공유해보세요.',
+    festival: '축제와 공연 소식, 후기를 이야기해보세요.',
+  }
+
+  return descriptions[currentCategory.value] || '여행과 지역 정보를 자유롭게 나눠보세요.'
+})
+
 const moveToWrite = () => {
-  router.push('/board/write')
+  router.push({
+    name: 'post-write',
+    params: { category: currentCategory.value },
+  })
 }
 </script>
 
 <template>
   <main class="board-list-view">
     <div class="board-container">
-      <!-- 페이지 제목 -->
       <div class="board-header">
-        <h1 class="board-title">자유게시판</h1>
+        <h1 class="board-title">{{ boardTitle }}</h1>
         <p class="board-description">
-          지역과 여행에 관한 이야기를 자유롭게 나눠보세요.
+          {{ boardDescription }}
         </p>
       </div>
 
-      <!-- 검색창 및 글쓰기 버튼 -->
       <section class="board-toolbar">
         <div class="search-area">
           <BoardSearch />
@@ -38,12 +60,10 @@ const moveToWrite = () => {
         </button>
       </section>
 
-      <!-- 게시글 목록 -->
       <section class="board-content">
         <PostTable />
       </section>
 
-      <!-- 페이지네이션 -->
       <div class="pagination-area">
         <PaginationBar />
       </div>
@@ -66,7 +86,6 @@ const moveToWrite = () => {
   margin: 0 auto;
 }
 
-/* 게시판 제목 영역 */
 .board-header {
   margin-bottom: 32px;
 }
@@ -85,7 +104,6 @@ const moveToWrite = () => {
   font-size: 14px;
 }
 
-/* 검색 및 글쓰기 영역 */
 .board-toolbar {
   display: flex;
   align-items: center;
@@ -99,7 +117,6 @@ const moveToWrite = () => {
   max-width: 720px;
 }
 
-/* 자식 컴포넌트 최상위 요소가 검색창 전체 너비를 사용하도록 설정 */
 .search-area :deep(> *) {
   width: 100%;
 }
@@ -116,39 +133,24 @@ const moveToWrite = () => {
   font-size: 14px;
   font-weight: 700;
   cursor: pointer;
-  transition:
-    background-color 0.2s ease,
-    transform 0.1s ease;
 }
 
 .write-button:hover {
   background-color: #d9322a;
 }
 
-.write-button:active {
-  transform: translateY(1px);
-}
-
-.write-button:focus-visible {
-  outline: 3px solid rgba(239, 63, 54, 0.25);
-  outline-offset: 2px;
-}
-
-/* 게시글 테이블 영역 */
 .board-content {
   width: 100%;
   overflow-x: auto;
   border-top: 2px solid #333333;
 }
 
-/* 페이지네이션 영역 */
 .pagination-area {
   display: flex;
   justify-content: center;
   margin-top: 36px;
 }
 
-/* 태블릿 */
 @media (max-width: 768px) {
   .board-list-view {
     padding: 32px 16px 60px;
@@ -171,7 +173,6 @@ const moveToWrite = () => {
   }
 }
 
-/* 모바일 */
 @media (max-width: 520px) {
   .board-toolbar {
     flex-direction: column;
