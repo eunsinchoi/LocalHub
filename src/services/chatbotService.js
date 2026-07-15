@@ -285,8 +285,8 @@ export async function requestChatbotAnswer(
 
           input: userPrompt,
 
-          temperature: 0.3,
-
+          // 'temperature' is not supported by some Responses API models.
+          // Removed to avoid "Unsupported parameter: 'temperature'" errors.
           max_output_tokens: 700,
         }),
       },
