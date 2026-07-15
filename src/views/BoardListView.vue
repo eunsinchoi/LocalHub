@@ -2,37 +2,10 @@
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
-import { getCategoryName } from '../services/localDataService'
 import BoardSearch from '../components/board/BoardSearch.vue'
 import PostTable from '../components/board/PostTable.vue'
 import PaginationBar from '../components/board/PaginationBar.vue'
 
-const route = useRoute()
-const router = useRouter()
-
-const currentCategory = computed(() => route.params.category || 'tourist')
-const currentCategoryName = computed(
-  () => getCategoryName(currentCategory.value) || '게시판',
-)
-const boardTitle = computed(() => `${currentCategoryName.value} 게시판`)
-const boardDescription = computed(() => {
-  const descriptions = {
-    tourist: '관광지 관련 정보와 여행 경험을 나눠보세요.',
-    leports: '레포츠 일정과 추천 코스를 공유해보세요.',
-    culture: '문화시설 방문 후기를 남겨보세요.',
-    shopping: '쇼핑 추천 포인트와 할인 정보를 나눠보세요.',
-    course: '여행 코스와 일정 계획을 공유해보세요.',
-    festival: '축제와 공연 소식, 후기를 이야기해보세요.',
-  }
-
-  return descriptions[currentCategory.value] || '여행과 지역 정보를 자유롭게 나눠보세요.'
-})
-
-const moveToWrite = () => {
-  router.push({
-    name: 'post-write',
-    params: { category: currentCategory.value },
-  })
 import { categories } from '../constants/categories.js'
 
 const route = useRoute()
@@ -59,10 +32,8 @@ const boardTitle = computed(() => {
   return `${currentCategory.value.name} 게시판`
 })
 
-const moveToWrite = () => {
-  router.push(
-    `/board/${currentCategoryKey.value}/write`,
-  )
+function moveToWrite() {
+  router.push(`/board/${currentCategoryKey.value}/write`)
 }
 </script>
 
