@@ -7,11 +7,20 @@ import RecentPosts from '../components/home/RecentPosts.vue'
 <template>
   <div class="home-view">
     <MainBanner />
-    <CategoryShortcut />
-    <RecentPosts />
+
+    <div class="home-container">
+      <CategoryShortcut />
+      <RecentPosts />
+    </div>
   </div>
 </template>
 
 <style scoped>
-/* 메인 페이지 스타일 작성 */
+.home-container {
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 24px;
+  box-sizing: border-box;
+}
 </style>
