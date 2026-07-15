@@ -1,220 +1,126 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
+
 import PasswordModal from '../common/PasswordModal.vue'
 import CommentSection from './CommentSection.vue'
 
 const route = useRoute()
+
 const post = ref(null)
 const isLoading = ref(true)
 const error = ref('')
 
-const fileData = [
-  { name: '서울_관광지.json', cat: '관광지' },
-  { name: '서울_레포츠.json', cat: '레포츠' },
-  { name: '서울_문화시설.json', cat: '문화시설' },
-  { name: '서울_쇼핑.json', cat: '쇼핑' },
-  { name: '서울_숙박.json', cat: '숙박' },
-  { name: '서울_여행코스.json', cat: '여행코스' },
-  { name: '서울_축제공연행사.json', cat: '축제공연' }
+const posts = [
+  {
+    id: 10,
+    title: '관광지 주변 맛집 추천해요',
+    createdAt: '2026-07-14',
+  },
+  {
+    id: 9,
+    title: '야경이 정말 예뻤던 곳이었어요',
+    createdAt: '2026-07-12',
+  },
+  {
+    id: 8,
+    title: '주말에 가기 좋은 코스 공유합니다',
+    createdAt: '2026-07-09',
+  },
 ]
 
-function formatDate(modifiedtime) {
-  if (!modifiedtime) return ''
-  const s = String(modifiedtime)
-  if (s.length >= 8) return `${s.slice(0,4)}-${s.slice(4,6)}-${s.slice(6,8)}`
-  return s
-}
-
-onMounted(async () => {
+onMounted(() => {
   const id = route.params.id
+
   if (!id) {
-    error.value = '잘못된 게시글입니다.'
     isLoading.value = false
     return
   }
 
-  isLoading.value = true
-  error.value = ''
+  post.value =
+    posts.find(
+      (item) =>
+        String(item.id) === String(id),
+    ) || null
 
-  try {
-    for (const f of fileData) {
-      try {
-        const res = await fetch(`/data/${f.name}`)
-        if (!res.ok) continue
-        const data = await res.json()
-        if (!data || !Array.isArray(data.items)) continue
-
-        const found = data.items.find(
-          (it) => String(it.contentid) === String(id),
-        )
-        if (found) {
-          post.value = { ...found, categoryName: f.cat }
-          break
-        }
-      } catch (e) {
-        // ignore single-file errors, continue others
-        // eslint-disable-next-line no-console
-        console.error('파일 로드 실패', f.name, e)
-      }
-    }
-
-    if (!post.value) {
-      error.value = '게시글을 찾을 수 없습니다.'
-    }
-  } catch (e) {
-    error.value = '게시글을 불러오는 중 오류가 발생했습니다.'
-    // eslint-disable-next-line no-console
-    console.error(e)
-  } finally {
-    isLoading.value = false
+  if (!post.value) {
+    error.value = '게시글을 찾을 수 없습니다.'
   }
+
+  isLoading.value = false
 })
 </script>
 
 <template>
-  <div class="post-detail-view">
-    <div v-if="isLoading" class="state">게시글을 불러오는 중입니다...</div>
-    <div v-else-if="error" class="state error">{{ error }}</div>
-    <article v-else-if="post" class="post-card">
-      <header class="post-header">
-        <h1 class="post-title">{{ post.title }}</h1>
-        <div class="post-meta">
-          <span class="category" v-if="post.categoryName">{{ post.categoryName }}</span>
-          <span class="date">{{ formatDate(post.modifiedtime) }}</span>
-        </div>
-      </header>
+  <div class="board-page">
+    <!-- 목록 -->
+    <div class="post-table-wrapper">
+      <table class="post-table">
+        <thead>
+          <tr>
+            <th>번호</th>
+            <th>제목</th>
+            <th>작성일자</th>
+          </tr>
+        </thead>
 
-      <div class="post-body">
-        <figure v-if="post.firstimage || post.firstimage2" class="post-image">
-          <img :src="post.firstimage || post.firstimage2" :alt="post.title" />
-        </figure>
+        <tbody>
+          <tr
+            v-for="item in posts"
+            :key="item.id"
+          >
+            <td>{{ item.id }}</td>
 
-        <dl class="post-info">
-          <div class="info-row" v-if="post.addr1 || post.addr2">
-            <dt>주소</dt>
-            <dd>{{ [post.addr1, post.addr2].filter(Boolean).join(' ') }}</dd>
-          </div>
-          <div class="info-row" v-if="post.tel">
-            <dt>전화</dt>
-            <dd>{{ post.tel }}</dd>
-          </div>
-          <div class="info-row" v-if="post.modifiedtime">
-            <dt>수정일</dt>
-            <dd>{{ formatDate(post.modifiedtime) }}</dd>
-          </div>
-        </dl>
+            <td>
+              <RouterLink
+                :to="{
+                  name: 'post-detail',
+                  params: {
+                    id: item.id,
+                  },
+                }"
+              >
+                {{ item.title }}
+              </RouterLink>
+            </td>
+
+            <td>
+              {{ item.createdAt }}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- 상세 -->
+    <section
+      v-if="route.params.id"
+      class="post-detail-view"
+    >
+      <div v-if="isLoading">
+        게시글을 불러오는 중입니다...
       </div>
-    </article>
 
-    <CommentSection v-if="post" />
-    <PasswordModal />
-const posts = [
-  { id: 10, title: '관광지 주변 맛집 추천해요', createdAt: '2026-07-14' },
-  { id: 9, title: '야경이 정말 예뻤던 곳이었어요', createdAt: '2026-07-12' },
-  { id: 8, title: '주말에 가기 좋은 코스 공유합니다', createdAt: '2026-07-09' },
-]
-</script>
+      <div v-else-if="error">
+        {{ error }}
+      </div>
 
-<template>
-  <div class="post-table-wrapper">
-    <table class="post-table">
-      <thead>
-        <tr>
-          <th scope="col">번호</th>
-          <th scope="col">제목</th>
-          <th scope="col">작성일자</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="post in posts" :key="post.id">
-          <td class="post-id">{{ post.id }}</td>
-          <td class="post-title">{{ post.title }}</td>
-          <td class="post-date">{{ post.createdAt }}</td>
-        </tr>
-      </tbody>
-    </table>
+      <article v-else-if="post">
+        <h1>{{ post.title }}</h1>
+        <p>{{ post.createdAt }}</p>
+      </article>
+
+      <CommentSection
+        v-if="post"
+        :post-id="route.params.id"
+      />
+
+      <PasswordModal />
+    </section>
   </div>
 </template>
 
 <style scoped>
-.post-detail-view {
-  padding: 20px;
-  max-width: 960px;
-  margin: 0 auto;
-}
-
-.state {
-  padding: 24px;
-  text-align: center;
-  color: #666;
-}
-
-.state.error {
-  color: #b00020;
-}
-
-.post-card {
-  background: #fff;
-  border-radius: 10px;
-  padding: 20px;
-  box-shadow: 0 6px 18px rgba(12,12,12,0.06);
-  margin-bottom: 18px;
-}
-
-.post-header {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-bottom: 12px;
-}
-
-.post-title {
-  margin: 0;
-  font-size: 22px;
-  color: #111;
-}
-
-.post-meta {
-  display: flex;
-  gap: 12px;
-  color: #777;
-  font-size: 13px;
-  align-items: center;
-}
-
-.post-image {
-  margin: 12px 0;
-  display: block;
-}
-
-.post-image img {
-  width: 100%;
-  height: auto;
-  border-radius: 8px;
-  object-fit: cover;
-}
-
-.post-info {
-  margin-top: 8px;
-  display: grid;
-  gap: 8px;
-}
-
-.info-row {
-  display: flex;
-  gap: 12px;
-}
-
-dt {
-  min-width: 54px;
-  color: #666;
-  font-weight: 600;
-}
-
-dd {
-  margin: 0;
-  color: #333;
 .post-table-wrapper {
   width: 100%;
 }
@@ -222,7 +128,6 @@ dd {
 .post-table {
   width: 100%;
   border-collapse: collapse;
-  background-color: #ffffff;
 }
 
 .post-table th,
@@ -232,27 +137,9 @@ dd {
   text-align: left;
 }
 
-.post-table th {
-  background-color: #f7f7f7;
-  color: #333333;
-  font-size: 14px;
-  font-weight: 700;
-}
-
-.post-id {
-  width: 80px;
-  color: #777777;
-  font-weight: 600;
-}
-
-.post-title {
-  color: #222222;
-  font-weight: 600;
-}
-
-.post-date {
-  width: 140px;
-  color: #777777;
-  font-weight: 500;
+.post-detail-view {
+  margin-top: 32px;
+  padding: 20px;
+  border: 1px solid #eeeeee;
 }
 </style>
