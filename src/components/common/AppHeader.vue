@@ -1,6 +1,21 @@
 <script setup>
+import { ref } from 'vue'
+
 import seoulLogo from '../../seoul_logo.png'
 import { categories } from '../../constants/categories.js'
+
+import SearchModal from './SearchModal.vue'
+
+const isSearchOpen = ref(false)
+
+function openSearch() {
+  isSearchOpen.value = true
+}
+
+function closeSearch() {
+  isSearchOpen.value = false
+}
+
 </script>
 
 <template>
@@ -53,6 +68,8 @@ import { categories } from '../../constants/categories.js'
           type="button"
           class="icon-button"
           aria-label="검색"
+          :aria-expanded="isSearchOpen"
+          @click="openSearch"
         >
           <svg
             viewBox="0 0 24 24"
@@ -71,6 +88,10 @@ import { categories } from '../../constants/categories.js'
       </nav>
     </div>
   </header>
+  <SearchModal
+    :is-open="isSearchOpen"
+    @close="closeSearch"
+  />
 </template>
 
 <style scoped>
