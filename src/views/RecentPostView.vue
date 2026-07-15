@@ -123,9 +123,13 @@ const isLast = computed(() => currentPage.value === totalPages.value);
 
               <td class="title">
                 <router-link
-                  :to="{ name: 'post-detail', params: { id: post.contentid } }"
-                  class="title-link"
-                >
+                  :to="{
+                    name: 'post-detail',
+                   params: {id: String(post.contentid)},
+                   query: {source: 'tour'}
+                   }"
+                 class="title-link"
+                 >
                   {{ post.title }}
                 </router-link>
               </td>
