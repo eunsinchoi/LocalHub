@@ -1,14 +1,41 @@
 <script setup>
-import { useRouter } from 'vue-router'
+import { computed } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 
 import BoardSearch from '../components/board/BoardSearch.vue'
 import PostTable from '../components/board/PostTable.vue'
 import PaginationBar from '../components/board/PaginationBar.vue'
 
+import { categories } from '../constants/categories.js'
+
+const route = useRoute()
 const router = useRouter()
 
+const currentCategoryKey = computed(() => {
+  return route.params.category || 'tourist'
+})
+
+const currentCategory = computed(() => {
+  return (
+    categories.find((category) => {
+      const key = category.path
+        .split('/')
+        .filter(Boolean)
+        .pop()
+
+      return key === currentCategoryKey.value
+    }) || categories[0]
+  )
+})
+
+const boardTitle = computed(() => {
+  return `${currentCategory.value.name} 게시판`
+})
+
 const moveToWrite = () => {
-  router.push('/board/write')
+  router.push(
+    `/board/${currentCategoryKey.value}/write`,
+  )
 }
 </script>
 
@@ -17,7 +44,10 @@ const moveToWrite = () => {
     <div class="board-container">
       <!-- 페이지 제목 -->
       <div class="board-header">
-        <h1 class="board-title">자유게시판</h1>
+        <h1 class="board-title">
+          {{ boardTitle }}
+        </h1>
+
         <p class="board-description">
           지역과 여행에 관한 이야기를 자유롭게 나눠보세요.
         </p>
@@ -99,7 +129,6 @@ const moveToWrite = () => {
   max-width: 720px;
 }
 
-/* 자식 컴포넌트 최상위 요소가 검색창 전체 너비를 사용하도록 설정 */
 .search-area :deep(> *) {
   width: 100%;
 }
@@ -109,13 +138,17 @@ const moveToWrite = () => {
   min-width: 96px;
   height: 44px;
   padding: 0 22px;
-  border: 0;
-  border-radius: 4px;
-  background-color: #ef3f36;
+
   color: #ffffff;
   font-size: 14px;
   font-weight: 700;
+
+  background-color: #ef3f36;
+  border: 0;
+  border-radius: 4px;
+
   cursor: pointer;
+
   transition:
     background-color 0.2s ease,
     transform 0.1s ease;
