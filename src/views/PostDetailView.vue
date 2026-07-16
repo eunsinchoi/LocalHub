@@ -4,10 +4,14 @@ import { useRoute } from 'vue-router'
 import PasswordModal from '../components/common/PasswordModal.vue'
 import CommentSection from '../components/board/CommentSection.vue'
 
+const likecount = ref(0)
+const isLiked = ref(false)  
+
 const route = useRoute()
 const post = ref(null)
 const isLoading = ref(true)
 const error = ref('')
+
 
 const fileData = [
   { name: '서울_관광지.json', cat: '관광지' },
@@ -63,14 +67,44 @@ onMounted(async () => {
     if (!post.value) {
       error.value = '게시글을 찾을 수 없습니다.'
     }
+    const likes = JSON.parse(localStorage.getItem('localhub_likes') || '{}')
+    const key = String(id)
+    likecount.value = likes[key]?.count || 0
+    isLiked.value = likes[key]?.liked || false
   } catch (e) {
     error.value = '게시글을 불러오는 중 오류가 발생했습니다.'
     // eslint-disable-next-line no-console
     console.error(e)
-  } finally {
+  } 
+   finally {
     isLoading.value = false
   }
 })
+function toggleLike() {
+  const likes = JSON.parse(
+    localStorage.getItem('localhub_likes') || '{}'
+  )
+
+  const key = String(route.params.id)
+
+  if (isLiked.value) {
+    likecount.value--
+  } else {
+    likecount.value++
+  }
+
+  isLiked.value = !isLiked.value
+
+  likes[key] = {
+    count: likecount.value,
+    liked: isLiked.value
+  }
+
+  localStorage.setItem(
+    'localhub_likes',
+    JSON.stringify(likes)
+  )
+}
 </script>
 
 <template>
@@ -85,6 +119,15 @@ onMounted(async () => {
           <span class="category" v-if="post.categoryName">{{ post.categoryName }}</span>
           <span class="date">{{ formatDate(post.modifiedtime) }}</span>
         </div>
+        <div class="like-area">
+          <button class="like-button"
+                  @click="toggleLike"
+           >
+             {{ isLiked ? '❤️' : '🤍' }}
+
+             좋아요 {{ likecount }}
+           </button>
+         </div>
       </header>
 
       <div class="post-body">
@@ -188,5 +231,31 @@ dt {
 dd {
   margin: 0;
   color: #333;
+}
+.like-area {
+  margin-top: 16px;
+}
+
+.like-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+
+  padding: 8px 14px;
+
+  background: #fff;
+
+  border: 1px solid #ddd;
+  border-radius: 20px;
+
+  cursor: pointer;
+
+  font-size: 14px;
+
+  transition: 0.2s;
+}
+
+.like-button:hover {
+  background: #f8f8f8;
 }
 </style>
