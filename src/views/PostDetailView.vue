@@ -468,16 +468,7 @@ watch(
         <div class="breadcrumb">
           {{ boardCrumb }}
         </div>
-        <div class="like-area">
-          <button class="like-button"
-                  @click="toggleLike"
-           >
-             {{ isLiked ? '❤️' : '🤍' }}
-
-             좋아요 {{ likeCount }}
-           </button>
-         </div>
-      </header>
+         
 
         <div class="board-sub">
           {{
@@ -490,57 +481,60 @@ watch(
 
       <article class="post-article">
         <!-- 제목 영역 -->
-        <header class="post-header">
-          <div class="post-heading">
-            <span
-              v-if="post.category"
-              class="category-badge"
-            >
-              {{ post.category }}
-            </span>
+    <header class="post-header">
+  <div class="post-heading">
+    <span
+      v-if="post.category"
+      class="category-badge"
+    >
+      {{ post.category }}
+    </span>
 
-            <h1 class="post-title">
-              {{ post.title || '제목 없음' }}
-            </h1>
-          </div>
+    <h1 class="post-title">
+      {{ post.title || '제목 없음' }}
+    </h1>
+  </div>
 
-          <!-- 북마크 -->
-          <button
-            type="button"
-            class="bookmark-btn"
-            :aria-pressed="isBookmarked"
-            :title="
-              isBookmarked
-                ? '북마크 해제'
-                : '북마크'
-            "
-            @click="toggleBookmark"
-          >
-            <svg
-              width="22"
-              height="22"
-              viewBox="0 0 24 24"
-              fill="none"
-              aria-hidden="true"
-            >
-              <path
-                d="M6 2H18V16L12 13L6 16V2Z"
-                :fill="
-                  isBookmarked
-                    ? '#c8323e'
-                    : 'none'
-                "
-                :stroke="
-                  isBookmarked
-                    ? '#c8323e'
-                    : '#333333'
-                "
-                stroke-width="1.2"
-                stroke-linejoin="round"
-              />
-            </svg>
-          </button>
-        </header>
+  <div class="post-actions">
+    <!-- 좋아요 -->
+    <button
+      class="like-button"
+      @click="toggleLike"
+    >
+      {{ isLiked ? '❤️' : '🤍' }}
+      {{ likeCount }}
+    </button>
+
+    <!-- 북마크 -->
+    <button
+      type="button"
+      class="bookmark-btn"
+      :aria-pressed="isBookmarked"
+      :title="
+        isBookmarked
+          ? '북마크 해제'
+          : '북마크'
+      "
+      @click="toggleBookmark"
+    >
+      <svg
+        width="22"
+        height="22"
+        viewBox="0 0 24 24"
+        fill="none"
+        aria-hidden="true"
+      >
+        <path
+          d="M6 2H18V16L12 13L6 16V2Z"
+          :fill="isBookmarked ? '#c8323e' : 'none'"
+          :stroke="isBookmarked ? '#c8323e' : '#333333'"
+          stroke-width="1.2"
+          stroke-linejoin="round"
+        />
+      </svg>
+    </button>
+  </div>
+</header>
 
         <!-- 작성 정보 -->
         <div class="post-meta">
@@ -1045,27 +1039,31 @@ watch(
     width: 100%;
   }
 }
-.like-area {
-  margin-top: 16px;
+
+.post-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
 }
 
 .like-button {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 
-  padding: 8px 14px;
+  padding: 6px 12px;
 
   background: #fff;
-
   border: 1px solid #ddd;
   border-radius: 20px;
 
   cursor: pointer;
 
   font-size: 14px;
+  font-weight: 600;
 
-  transition: 0.2s;
+  transition: all 0.2s ease;
 }
 
 .like-button:hover {
