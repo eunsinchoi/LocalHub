@@ -4,12 +4,19 @@ import {
   reactive,
   ref,
 } from 'vue'
+
 import {
   useRoute,
   useRouter,
 } from 'vue-router'
 
-import { categories } from '../constants/categories.js'
+import {
+  categories,
+} from '../constants/categories.js'
+
+import {
+  createPost,
+} from '../services/postStorageService.js'
 
 const route = useRoute()
 const router = useRouter()
@@ -30,6 +37,13 @@ const errors = reactive({
 
 const isSubmitting = ref(false)
 
+/*
+ * 현재 URL에서 카테고리 키를 가져옵니다.
+ *
+ * 예:
+ * /board/tourist/write
+ * → tourist
+ */
 const currentCategoryKey = computed(() => {
   return (
     route.params.category ||
@@ -37,6 +51,10 @@ const currentCategoryKey = computed(() => {
   )
 })
 
+/*
+ * 카테고리 키에 해당하는
+ * 카테고리 객체를 찾습니다.
+ */
 const currentCategory = computed(() => {
   return (
     categories.find((category) => {
@@ -48,6 +66,14 @@ const currentCategory = computed(() => {
   )
 })
 
+/*
+ * category.path에서
+ * 마지막 경로를 카테고리 키로 가져옵니다.
+ *
+ * 예:
+ * /board/tourist
+ * → tourist
+ */
 function getCategoryKey(category) {
   return category.path
     .split('/')
@@ -55,11 +81,21 @@ function getCategoryKey(category) {
     .pop()
 }
 
+/*
+ * 다른 카테고리의 글쓰기 페이지로 이동합니다.
+ */
 function moveToCategory(category) {
-  const categoryKey = getCategoryKey(category)
-  router.push(`/board/${categoryKey}/write`)
+  const categoryKey =
+    getCategoryKey(category)
+
+  router.push(
+    `/board/${categoryKey}/write`,
+  )
 }
 
+/*
+ * 기존 오류 메시지를 초기화합니다.
+ */
 function clearErrors() {
   errors.title = ''
   errors.content = ''
@@ -67,6 +103,9 @@ function clearErrors() {
   errors.passwordConfirm = ''
 }
 
+/*
+ * 게시글 입력값을 검사합니다.
+ */
 function validateForm() {
   clearErrors()
 
@@ -118,15 +157,24 @@ function validateForm() {
   return isValid
 }
 
+/*
+ * 비밀번호 입력란에는 숫자만 입력되도록 합니다.
+ */
 function allowNumbersOnly(
   field,
   event,
 ) {
   form[field] =
-    event.target.value.replace(/\D/g, '')
+    event.target.value.replace(
+      /\D/g,
+      '',
+    )
 }
 
-async function submitPost() {
+/*
+ * 사용자 게시물을 localStorage에 저장합니다.
+ */
+function submitPost() {
   if (!validateForm()) {
     return
   }
@@ -135,39 +183,59 @@ async function submitPost() {
 
   try {
     const postData = {
-      category:
+      /*
+       * 게시판 필터링에 사용하는 내부 키
+       *
+       * 예:
+       * tourist
+       * culture
+       * festival
+       */
+      categoryKey:
         currentCategoryKey.value,
-      title: form.title.trim(),
-      content: form.content.trim(),
-      password: form.password,
+
+      /*
+       * 화면에 표시할 한글 카테고리명
+       *
+       * 예:
+       * 관광지
+       * 문화시설
+       * 축제공연
+       */
+      category:
+        currentCategory.value.name,
+
+      title:
+        form.title.trim(),
+
+      content:
+        form.content.trim(),
+
+      password:
+        form.password,
     }
 
-    /*
-      실제 API 연결 예시
+    const createdPost =
+      createPost(postData)
 
-      await createPost(postData)
-
-      또는
-
-      await fetch('/api/posts', {
-        method: 'POST',
-        headers: {
-          'Content-Type':
-            'application/json',
-        },
-        body: JSON.stringify(postData),
-      })
-    */
+    if (!createdPost) {
+      throw new Error(
+        '게시글을 저장하지 못했습니다.',
+      )
+    }
 
     console.log(
-      '등록할 게시글:',
-      postData,
+      '등록된 게시글:',
+      createdPost,
     )
 
     window.alert(
       '게시글이 등록되었습니다.',
     )
 
+    /*
+     * 등록한 카테고리 게시판으로 이동합니다.
+     */
     router.push(
       currentCategory.value.path,
     )
@@ -185,6 +253,9 @@ async function submitPost() {
   }
 }
 
+/*
+ * 작성 취소 처리
+ */
 function cancelWrite() {
   const hasInput =
     form.title.trim() ||
@@ -307,6 +378,7 @@ function cancelWrite() {
               class="form-label"
             >
               제목
+
               <span
                 class="required-mark"
               >
@@ -361,6 +433,7 @@ function cancelWrite() {
               class="form-label"
             >
               내용
+
               <span
                 class="required-mark"
               >
@@ -417,6 +490,7 @@ function cancelWrite() {
               class="form-label"
             >
               수정용 비밀번호
+
               <span
                 class="required-mark"
               >
@@ -453,8 +527,8 @@ function cancelWrite() {
               <p
                 class="password-guide"
               >
-                게시글 수정 및 삭제
-                시 사용됩니다.
+                게시글 수정 및 삭제 시
+                사용됩니다.
               </p>
 
               <p
@@ -477,6 +551,7 @@ function cancelWrite() {
               class="form-label"
             >
               비밀번호 확인
+
               <span
                 class="required-mark"
               >
@@ -560,7 +635,9 @@ function cancelWrite() {
 .post-write-view {
   min-height:
     calc(100vh - 72px);
-  padding: 34px 24px 70px;
+
+  padding:
+    34px 24px 70px;
 
   background: #ffffff;
 }
@@ -724,8 +801,10 @@ function cancelWrite() {
 
 .form-row {
   display: grid;
+
   grid-template-columns:
     150px minmax(0, 1fr);
+
   gap: 24px;
 
   padding: 18px 0;
@@ -772,12 +851,14 @@ function cancelWrite() {
   padding: 15px;
 
   line-height: 1.7;
+
   resize: vertical;
 }
 
 .form-input:focus,
 .form-textarea:focus {
   border-color: #c8323e;
+
   box-shadow:
     0 0 0 3px
     rgba(197, 48, 48, 0.1);
@@ -885,8 +966,8 @@ function cancelWrite() {
 }
 
 .submit-button:hover {
-  background: #c8323e;
-  border-color: #c8323e;
+  background: #b42b36;
+  border-color: #b42b36;
 }
 
 .cancel-button:disabled,
@@ -943,6 +1024,7 @@ function cancelWrite() {
 
   .button-area {
     display: grid;
+
     grid-template-columns:
       1fr 1fr;
   }

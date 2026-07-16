@@ -1,23 +1,86 @@
 <script setup>
+import {
+  onActivated,
+  onMounted,
+  ref,
+} from 'vue'
+
 import PostTable from '../components/board/PostTable.vue'
 
-const bookmarkedPosts = [
-  {
-    id: 10,
-    title: '관광지 주변 맛집 추천해요',
-    createdAt: '2026-07-14',
-  },
-  {
-    id: 9,
-    title: '야경이 정말 예뻤던 곳이었어요',
-    createdAt: '2026-07-12',
-  },
-  {
-    id: 8,
-    title: '주말에 가기 좋은 코스 공유합니다',
-    createdAt: '2026-07-09',
-  },
-]
+import {
+  getAllContents,
+} from '../services/contentFeedService.js'
+
+import {
+  getBookmarks,
+} from '../services/bookmarkService.js'
+
+const bookmarkedPosts = ref([])
+const isLoading = ref(true)
+const error = ref('')
+
+function getContentBookmarkKey(content) {
+  return (
+    content.feedId ||
+    `${content.source}:${content.id}`
+  )
+}
+
+async function loadBookmarkedPosts() {
+  isLoading.value = true
+  error.value = ''
+
+  try {
+    const [
+      allContents,
+      savedBookmarks,
+    ] = await Promise.all([
+      getAllContents(),
+      Promise.resolve(
+        getBookmarks(),
+      ),
+    ])
+
+    const bookmarkSet = new Set(
+      savedBookmarks.map(
+        (bookmarkId) =>
+          String(bookmarkId),
+      ),
+    )
+
+    bookmarkedPosts.value =
+      allContents.filter((content) => {
+        const bookmarkKey =
+          getContentBookmarkKey(
+            content,
+          )
+
+        return bookmarkSet.has(
+          String(bookmarkKey),
+        )
+      })
+  } catch (loadError) {
+    console.error(
+      '북마크 목록 로드 실패:',
+      loadError,
+    )
+
+    bookmarkedPosts.value = []
+    error.value =
+      '북마크 목록을 불러오지 못했습니다.'
+  } finally {
+    isLoading.value = false
+  }
+}
+
+onMounted(loadBookmarkedPosts)
+
+/*
+ * KeepAlive를 사용하고 있을 경우,
+ * 상세 페이지에서 북마크를 변경한 뒤 돌아왔을 때
+ * 목록을 다시 불러옵니다.
+ */
+onActivated(loadBookmarkedPosts)
 </script>
 
 <template>
@@ -34,7 +97,25 @@ const bookmarkedPosts = [
       </header>
 
       <section class="bookmark-content">
-        <PostTable :posts="bookmarkedPosts" />
+        <div
+          v-if="isLoading"
+          class="bookmark-state"
+        >
+          북마크를 불러오는 중입니다.
+        </div>
+
+        <div
+          v-else-if="error"
+          class="bookmark-state error"
+        >
+          {{ error }}
+        </div>
+
+        <PostTable
+          v-else
+          :posts="bookmarkedPosts"
+          :start-number="0"
+        />
       </section>
     </div>
   </main>
@@ -78,9 +159,20 @@ const bookmarkedPosts = [
 
 .bookmark-content {
   width: 100%;
-  overflow: hidden;
+  overflow-x: auto;
 
   border-top: 2px solid #333333;
+}
+
+.bookmark-state {
+  padding: 60px 20px;
+
+  color: #777777;
+  text-align: center;
+}
+
+.bookmark-state.error {
+  color: #c8323e;
 }
 
 @media (max-width: 768px) {
