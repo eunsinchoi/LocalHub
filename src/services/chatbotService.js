@@ -1,14 +1,6 @@
 // src/services/chatbotService.js
 
-const OPENAI_API_URL =
-  'https://api.openai.com/v1/responses'
-
-const OPENAI_API_KEY =
-  import.meta.env.VITE_OPENAI_API_KEY
-
-const OPENAI_MODEL =
-  import.meta.env.VITE_OPENAI_MODEL ||
-  'gpt-4o-mini'
+const CHATBOT_API_URL = '/api/openai'
 
 const SYSTEM_PROMPT = `
 당신은 서울 지역 정보 공유 커뮤니티 LocalHub의 AI 안내 도우미입니다.
@@ -250,16 +242,13 @@ async function callOpenAi(
   ) {
     try {
       const response = await fetch(
-        OPENAI_API_URL,
+        CHATBOT_API_URL,
         {
           method: 'POST',
 
           headers: {
             'Content-Type':
               'application/json',
-
-            Authorization:
-              `Bearer ${OPENAI_API_KEY}`,
           },
 
           body: JSON.stringify(
@@ -353,9 +342,7 @@ async function callOpenAi(
 }
 
 export function hasOpenAiApiKey() {
-  return Boolean(
-    normalizeText(OPENAI_API_KEY),
-  )
+  return true
 }
 
 export async function requestChatbotAnswer(
@@ -390,14 +377,7 @@ export async function requestChatbotAnswer(
     requestId,
   } = await callOpenAi(
     {
-      model: OPENAI_MODEL,
-
-      instructions:
-        SYSTEM_PROMPT,
-
       input: userPrompt,
-
-      max_output_tokens: 700,
     },
     1,
   )

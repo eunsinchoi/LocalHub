@@ -478,12 +478,12 @@ function handleEnter(event) {
 }
 
 .chatbot-floating-button:hover {
-  background: #b62a35;
+  background: #c8323e;
   transform: translateY(-3px);
 }
 
 .chatbot-floating-button--open {
-  background: #8d252c;
+  background: #c8323e;
   transform: rotate(90deg);
 }
 
@@ -536,8 +536,8 @@ function handleEnter(event) {
   background:
     linear-gradient(
       135deg,
-      #b92430 0%,
-      #d33a45 100%
+      #c8323e 0%,
+      #c8323e 100%
     );
 }
 
@@ -715,7 +715,7 @@ function handleEnter(event) {
   margin: 0;
   padding: 10px 12px;
 
-  color: #a32630;
+  color: #c8323e;
   font-size: 12px;
 
   background: #fff0f1;
