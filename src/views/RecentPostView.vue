@@ -304,4 +304,47 @@ onMounted(loadRecentPosts)
   .card { padding: 12px; }
   .posts-table thead th, .posts-table tbody td { padding: 10px 12px; }
 }
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  margin-top: 32px;
+}
+
+.pager-left,
+.pager-right {
+  display: flex;
+  gap: 6px;
+}
+
+.pager-list {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.pager-list li {
+  list-style: none;
+}
+
+.pager-btn,
+.pager-number {
+  width: 36px;
+  height: 36px;
+  border: 1px solid #ddd;
+  background: white;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.pager-number.active {
+  background: #c8323e;
+  color: white;
+  border-color: #c8323e;
+}
 </style>
