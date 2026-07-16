@@ -468,19 +468,16 @@ watch(
         <div class="breadcrumb">
           {{ boardCrumb }}
         </div>
-<<<<<<< HEAD
         <div class="like-area">
           <button class="like-button"
                   @click="toggleLike"
            >
              {{ isLiked ? '❤️' : '🤍' }}
 
-             좋아요 {{ likecount }}
+             좋아요 {{ likeCount }}
            </button>
          </div>
       </header>
-=======
->>>>>>> master
 
         <div class="board-sub">
           {{
