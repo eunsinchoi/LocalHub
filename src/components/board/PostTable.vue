@@ -1,272 +1,388 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+const props = defineProps({
+  posts: {
+    type: Array,
+    default: () => [],
+  },
 
-const allRecentPosts = ref([]);
-const pageSize = 10;
-const currentPage = ref(1);
+  startNumber: {
+    type: Number,
+    default: 0,
+  },
+})
 
-const fileData = [
-  { name: '서울_관광지.json', cat: '관광지' },
-  { name: '서울_레포츠.json', cat: '레포츠' },
-  { name: '서울_문화시설.json', cat: '문화시설' },
-  { name: '서울_쇼핑.json', cat: '쇼핑' },
-  { name: '서울_숙박.json', cat: '숙박' },
-  { name: '서울_여행코스.json', cat: '여행코스' },
-  { name: '서울_축제공연행사.json', cat: '축제공연' }
-];
-
-onMounted(async () => {
-  let posts = [];
-  for (const file of fileData) {
-    try {
-      const res = await fetch(`/data/${file.name}`);
-      const data = await res.json();
-      if (data && data.items) {
-        const postsWithCat = data.items.map(post => ({ ...post, categoryName: file.cat }));
-        posts = posts.concat(postsWithCat);
-      }
-    } catch (err) {
-      // eslint-disable-next-line no-console
-      console.error(`${file.name} 로드 실패`, err);
-    }
-  }
-  posts.sort((a, b) => {
-    const ma = a.modifiedtime || '';
-    const mb = b.modifiedtime || '';
-    if (mb > ma) return 1;
-    if (mb < ma) return -1;
-    return 0;
-  });
-  allRecentPosts.value = posts;
-});
-
-const totalPages = computed(() => Math.max(1, Math.ceil(allRecentPosts.value.length / pageSize)));
-
-const pagedPosts = computed(() => {
-  const start = (currentPage.value - 1) * pageSize;
-  return allRecentPosts.value.slice(start, start + pageSize);
-});
-
-function formatDate(modifiedtime) {
-  if (!modifiedtime) return '';
-  const s = String(modifiedtime);
-  if (s.length >= 8) return `${s.slice(0,4)}-${s.slice(4,6)}-${s.slice(6,8)}`;
-  return s;
-}
-
-function gotoPage(n) {
-  const p = Math.min(Math.max(1, n), totalPages.value);
-  currentPage.value = p;
-}
-
-function prevPage() {
-  gotoPage(currentPage.value - 1);
-}
-
-function nextPage() {
-  gotoPage(currentPage.value + 1);
-}
-
-function firstPage() {
-  gotoPage(1);
-}
-
-function lastPage() {
-  gotoPage(totalPages.value);
-}
-
-const pagerRange = computed(() => {
-  const total = totalPages.value;
-  const current = currentPage.value;
-  const maxButtons = 7;
-  if (total <= maxButtons) return Array.from({ length: total }, (_, i) => i + 1);
-
-  const range = [];
-  const half = Math.floor(maxButtons / 2);
-  let start = current - half;
-  let end = current + half;
-
-  if (start < 1) {
-    start = 1;
-    end = maxButtons;
-  } else if (end > total) {
-    end = total;
-    start = total - maxButtons + 1;
+function formatDate(value) {
+  if (!value) {
+    return '-'
   }
 
-  for (let i = start; i <= end; i++) range.push(i);
-  return range;
-});
+  const dateText = String(value).trim()
 
-const isFirst = computed(() => currentPage.value === 1);
-const isLast = computed(() => currentPage.value === totalPages.value);
+  /*
+   * TourAPI 원본 날짜
+   * 예: 20260715153000
+   */
+  if (/^\d{8,14}$/.test(dateText)) {
+    return [
+      dateText.slice(0, 4),
+      dateText.slice(4, 6),
+      dateText.slice(6, 8),
+    ].join('-')
+  }
+
+  /*
+   * ISO 날짜
+   * 예: 2026-07-15T15:30:00.000Z
+   *
+   * localDataService 날짜
+   * 예: 2026-07-15 15:30
+   */
+  return dateText.slice(0, 10)
+}
+
+function getPostDate(post) {
+  return (
+    post.modifiedAt ||
+    post.updatedAt ||
+    post.createdAt ||
+    post.date ||
+    post.raw?.modifiedtime ||
+    post.raw?.createdtime ||
+    ''
+  )
+}
+
+function getPostKey(post, index) {
+  return (
+    post.feedId ||
+    `${post.source || 'unknown'}:${post.id || index}`
+  )
+}
+
+function getPostDetailRoute(post) {
+  return {
+    name: 'post-detail',
+
+    params: {
+      id: post.id,
+    },
+
+    query: {
+      source:
+        post.source || '',
+    },
+  }
+}
 </script>
 
 <template>
-  <section class="recent-posts-view">
-    <h1>최근 게시글 전체 목록</h1>
+  <div class="post-table-wrap">
+    <table class="post-table">
+      <thead>
+        <tr>
+          <th
+            scope="col"
+            class="number-column"
+          >
+            No.
+          </th>
 
-    <div class="card">
-      <div class="table-wrap" role="region" aria-label="최근 게시글 목록">
-        <table class="posts-table">
-          <thead>
-            <tr>
-              <th scope="col">No.</th>
-              <th scope="col">제목</th>
-              <th scope="col">카테고리</th>
-              <th scope="col">수정일</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="(post, idx) in pagedPosts" :key="post.contentid ?? (idx + (currentPage-1)*pageSize)">
-              <td class="num">{{ (currentPage - 1) * pageSize + idx + 1 }}</td>
+          <th
+            scope="col"
+            class="title-column"
+          >
+            제목
+          </th>
 
-              <!-- Title navigates to post-detail route -->
-              <td class="title">
-                <router-link
-                  :to="{ name: 'post-detail', params: { id: post.contentid } }"
-                  class="title-link"
-                >
-                  {{ post.title }}
-                </router-link>
-              </td>
+          <th
+            scope="col"
+            class="category-column"
+          >
+            카테고리
+          </th>
 
-              <td class="category">{{ post.categoryName }}</td>
-              <td class="date">{{ formatDate(post.modifiedtime) }}</td>
-            </tr>
+          <th
+            scope="col"
+            class="author-column"
+          >
+            작성자
+          </th>
 
-            <tr v-if="allRecentPosts.length === 0">
-              <td colspan="4" class="empty">게시글이 없습니다.</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+          <th
+            scope="col"
+            class="date-column"
+          >
+            작성일
+          </th>
+        </tr>
+      </thead>
 
-      <nav class="pagination" aria-label="페이지 네비게이션" v-if="totalPages > 1">
-        <div class="pager-left">
-          <button class="pager-btn" @click="firstPage" :disabled="isFirst" aria-label="맨 앞으로"><<</button>
-          <button class="pager-btn" @click="prevPage" :disabled="isFirst" aria-label="이전 페이지"><</button>
-        </div>
+      <tbody>
+        <tr
+          v-for="(
+            post,
+            index
+          ) in props.posts"
+          :key="
+            getPostKey(
+              post,
+              index,
+            )
+          "
+          class="post-row"
+        >
+          <td class="number-cell">
+            {{
+              props.startNumber +
+              index +
+              1
+            }}
+          </td>
 
-        <ul class="pager-list" role="list">
-          <li v-for="p in pagerRange" :key="p">
-            <button
-              class="pager-number"
-              :class="{ active: p === currentPage }"
-              @click="gotoPage(p)"
-              :aria-current="p === currentPage ? 'page' : null"
+          <td class="title-cell">
+            <RouterLink
+              :to="
+                getPostDetailRoute(
+                  post,
+                )
+              "
+              class="title-link"
             >
-              {{ p }}
-            </button>
-          </li>
-        </ul>
+              <span
+                v-if="
+                  post.source ===
+                  'user'
+                "
+                class="user-post-badge"
+              >
+                후기
+              </span>
 
-        <div class="pager-right">
-          <button class="pager-btn" @click="nextPage" :disabled="isLast" aria-label="다음 페이지">></button>
-          <button class="pager-btn" @click="lastPage" :disabled="isLast" aria-label="맨 마지막으로">>></button>
-        </div>
-      </nav>
-    </div>
-  </section>
+              <span class="post-title">
+                {{
+                  post.title ||
+                  '제목 없음'
+                }}
+              </span>
+            </RouterLink>
+          </td>
+
+          <td class="category-cell">
+            {{
+              post.category ||
+              post.contentType ||
+              '-'
+            }}
+          </td>
+
+          <td class="author-cell">
+            {{
+              post.source ===
+              'local'
+                ? '한국관광공사'
+                : post.nickname ||
+                  post.author ||
+                  '익명'
+            }}
+          </td>
+
+          <td class="date-cell">
+            {{
+              formatDate(
+                getPostDate(
+                  post,
+                ),
+              )
+            }}
+          </td>
+        </tr>
+
+        <tr
+          v-if="
+            props.posts.length ===
+            0
+          "
+        >
+          <td
+            colspan="5"
+            class="empty-cell"
+          >
+            등록된 게시글이 없습니다.
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
 </template>
 
 <style scoped>
-.recent-posts-view {
-  padding: 20px;
+.post-table-wrap {
+  width: 100%;
+  min-width: 760px;
 }
 
-.card {
-  background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 6px 18px rgba(12,12,12,0.06);
-  padding: 18px;
-  max-width: 1100px;
-  margin: 0 auto;
-}
-
-/* Table wrapper makes the table horizontally scrollable on small screens */
-.table-wrap {
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-}
-
-/* Basic table styling */
-.posts-table {
+.post-table {
   width: 100%;
   border-collapse: collapse;
-  min-width: 640px;
+  table-layout: fixed;
 }
 
-.posts-table thead th {
-  text-align: left;
-  font-weight: 600;
-  padding: 12px 16px;
-  background: transparent;
-  color: #444;
-  border-bottom: 1px solid #eee;
+.post-table th {
+  height: 52px;
+  padding: 0 14px;
+
+  color: #444444;
+  font-size: 14px;
+  font-weight: 700;
+  text-align: center;
+
+  background-color: #fafafa;
+  border-bottom: 1px solid #dddddd;
 }
 
-.posts-table tbody td {
-  padding: 12px 16px;
-  border-bottom: 1px solid #f5f5f5;
+.post-table td {
+  height: 58px;
+  padding: 10px 14px;
+
+  color: #555555;
+  font-size: 14px;
+  text-align: center;
   vertical-align: middle;
-  color: #333;
+
+  border-bottom: 1px solid #eeeeee;
 }
 
-.posts-table tbody tr:hover {
-  background: rgba(255, 85, 85, 0.03);
-  transform: translateY(-1px);
+.post-row {
+  transition:
+    background-color 0.2s ease;
 }
 
-/* Column sizing */
-.num {
-  width: 64px;
-  color: #666;
+.post-row:hover {
+  background-color: #fffafa;
+}
+
+.number-column {
+  width: 76px;
+}
+
+.title-column {
+  width: auto;
+}
+
+.category-column {
+  width: 130px;
+}
+
+.author-column {
+  width: 130px;
+}
+
+.date-column {
+  width: 130px;
+}
+
+.number-cell {
+  color: #888888;
+}
+
+.title-cell {
+  overflow: hidden;
   text-align: left;
 }
 
 .title-link {
-  color: #1f2937;
-  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  min-width: 0;
+
+  color: #222222;
   font-weight: 500;
+  text-decoration: none;
 }
 
 .title-link:hover {
+  color: #c8323e;
   text-decoration: underline;
 }
 
-.title {
-  width: 60%;
-  font-weight: 500;
+.post-title {
+  display: block;
+
+  overflow: hidden;
+
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.category {
-  width: 160px;
-  color: #666;
-  text-align: left;
+.user-post-badge {
+  flex-shrink: 0;
+
+  padding: 3px 7px;
+
+  color: #c8323e;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.2;
+
+  background-color: #fff5f5;
+  border: 1px solid #f0c6ca;
+  border-radius: 4px;
 }
 
-.date {
-  width: 160px;
-  color: #888;
-  text-align: left;
+.category-cell {
+  color: #666666;
 }
 
-/* Empty row */
-.empty {
-  text-align: center;
-  padding: 18px;
-  color: #777;
+.author-cell {
+  overflow: hidden;
+
+  color: #777777;
+
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-/* Responsive adjustments */
-@media (max-width: 720px) {
-  .card {
-    padding: 12px;
+.date-cell {
+  color: #888888;
+  white-space: nowrap;
+}
+
+.empty-cell {
+  height: 160px !important;
+
+  color: #888888 !important;
+  text-align: center !important;
+}
+
+@media (max-width: 768px) {
+  .post-table-wrap {
+    min-width: 680px;
   }
-  .posts-table thead th,
-  .posts-table tbody td {
-    padding: 10px 12px;
+
+  .post-table th,
+  .post-table td {
+    padding-right: 10px;
+    padding-left: 10px;
+
+    font-size: 13px;
+  }
+
+  .number-column {
+    width: 62px;
+  }
+
+  .category-column {
+    width: 110px;
+  }
+
+  .author-column {
+    width: 110px;
+  }
+
+  .date-column {
+    width: 112px;
   }
 }
 </style>

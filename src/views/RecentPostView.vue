@@ -1,105 +1,105 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import {
+  computed,
+  onMounted,
+  ref,
+} from 'vue'
 
-const allRecentPosts = ref([]);
-const pageSize = 10;
-const currentPage = ref(1);
+import PaginationBar from '../components/board/PaginationBar.vue'
 
-const fileData = [
-  { name: '서울_관광지.json', cat: '관광지' },
-  { name: '서울_레포츠.json', cat: '레포츠' },
-  { name: '서울_문화시설.json', cat: '문화시설' },
-  { name: '서울_쇼핑.json', cat: '쇼핑' },
-  { name: '서울_숙박.json', cat: '숙박' },
-  { name: '서울_여행코스.json', cat: '여행코스' },
-  { name: '서울_축제공연행사.json', cat: '축제공연' }
-];
+import {
+  getAllContents,
+} from '../services/contentFeedService.js'
 
-onMounted(async () => {
-  let posts = [];
-  for (const file of fileData) {
-    try {
-      const res = await fetch(`/data/${file.name}`);
-      const data = await res.json();
-      if (data && data.items) {
-        const postsWithCat = data.items.map(post => ({ ...post, categoryName: file.cat }));
-        posts = posts.concat(postsWithCat);
-      }
-    } catch (err) {
-      // eslint-disable-next-line no-console
-      console.error(`${file.name} 로드 실패`, err);
-    }
-  }
-  posts.sort((a, b) => {
-    const ma = a.modifiedtime || '';
-    const mb = b.modifiedtime || '';
-    if (mb > ma) return 1;
-    if (mb < ma) return -1;
-    return 0;
-  });
-  allRecentPosts.value = posts;
-});
+const allRecentPosts = ref([])
+const currentPage = ref(1)
+const pageSize = 10
 
-const totalPages = computed(() => Math.max(1, Math.ceil(allRecentPosts.value.length / pageSize)));
+const isLoading = ref(true)
+const error = ref('')
+
+const totalPages = computed(() => {
+  return Math.max(
+    1,
+    Math.ceil(
+      allRecentPosts.value.length /
+      pageSize,
+    ),
+  )
+})
 
 const pagedPosts = computed(() => {
-  const start = (currentPage.value - 1) * pageSize;
-  return allRecentPosts.value.slice(start, start + pageSize);
-});
+  const start =
+    (currentPage.value - 1) *
+    pageSize
 
-function formatDate(modifiedtime) {
-  if (!modifiedtime) return '';
-  const s = String(modifiedtime);
-  if (s.length >= 8) return `${s.slice(0,4)}-${s.slice(4,6)}-${s.slice(6,8)}`;
-  return s;
-}
+  return allRecentPosts.value.slice(
+    start,
+    start + pageSize,
+  )
+})
 
-function gotoPage(n) {
-  const p = Math.min(Math.max(1, n), totalPages.value);
-  currentPage.value = p;
-}
-
-function prevPage() {
-  gotoPage(currentPage.value - 1);
-}
-
-function nextPage() {
-  gotoPage(currentPage.value + 1);
-}
-
-function firstPage() {
-  gotoPage(1);
-}
-
-function lastPage() {
-  gotoPage(totalPages.value);
-}
-
-const pagerRange = computed(() => {
-  const total = totalPages.value;
-  const current = currentPage.value;
-  const maxButtons = 7;
-  if (total <= maxButtons) return Array.from({ length: total }, (_, i) => i + 1);
-
-  const range = [];
-  const half = Math.floor(maxButtons / 2);
-  let start = current - half;
-  let end = current + half;
-
-  if (start < 1) {
-    start = 1;
-    end = maxButtons;
-  } else if (end > total) {
-    end = total;
-    start = total - maxButtons + 1;
+function formatDate(value) {
+  if (!value) {
+    return '-'
   }
 
-  for (let i = start; i <= end; i++) range.push(i);
-  return range;
-});
+  const dateText =
+    String(value)
 
-const isFirst = computed(() => currentPage.value === 1);
-const isLast = computed(() => currentPage.value === totalPages.value);
+  /*
+   * TourAPI 원본 형식
+   * 20260715153000
+   */
+  if (/^\d{8}/.test(dateText)) {
+    return [
+      dateText.slice(0, 4),
+      dateText.slice(4, 6),
+      dateText.slice(6, 8),
+    ].join('-')
+  }
+
+  /*
+   * 사용자 게시물 ISO 형식
+   * 2026-07-15T15:30:00.000Z
+   *
+   * JSON 정규화 형식
+   * 2026-07-15 15:30
+   */
+  return dateText.slice(0, 10)
+}
+
+function gotoPage(page) {
+  currentPage.value = Math.min(
+    Math.max(1, page),
+    totalPages.value,
+  )
+}
+
+async function loadRecentPosts() {
+  isLoading.value = true
+  error.value = ''
+
+  try {
+    allRecentPosts.value =
+      await getAllContents()
+
+    currentPage.value = 1
+  } catch (loadError) {
+    console.error(
+      '최근 게시글 로드 실패:',
+      loadError,
+    )
+
+    allRecentPosts.value = []
+    error.value =
+      '최근 게시글을 불러오지 못했습니다.'
+  } finally {
+    isLoading.value = false
+  }
+}
+
+onMounted(loadRecentPosts)
 </script>
 
 <template>
@@ -107,68 +107,136 @@ const isLast = computed(() => currentPage.value === totalPages.value);
     <h1>최근 게시글 전체 목록</h1>
 
     <div class="card">
-      <div class="table-wrap" role="region" aria-label="최근 게시글 목록">
+      <div
+        v-if="isLoading"
+        class="empty"
+      >
+        게시글을 불러오는 중입니다.
+      </div>
+
+      <div
+        v-else-if="error"
+        class="empty"
+      >
+        {{ error }}
+      </div>
+
+      <div
+        v-else
+        class="table-wrap"
+        role="region"
+        aria-label="최근 게시글 목록"
+      >
         <table class="posts-table">
           <thead>
             <tr>
-              <th scope="col">No.</th>
-              <th scope="col">제목</th>
-              <th scope="col">카테고리</th>
-              <th scope="col">수정일</th>
+              <th scope="col">
+                No.
+              </th>
+
+              <th scope="col">
+                제목
+              </th>
+
+              <th scope="col">
+                카테고리
+              </th>
+
+              <th scope="col">
+                수정일
+              </th>
             </tr>
           </thead>
-          <tbody>
-            <tr v-for="(post, idx) in pagedPosts" :key="post.contentid ?? (idx + (currentPage-1)*pageSize)">
-              <td class="num">{{ (currentPage - 1) * pageSize + idx + 1 }}</td>
 
-              <td class="title">
-                <router-link
-                  :to="{
-                    name: 'post-detail',
-                   params: {id: String(post.contentid)},
-                   query: {source: 'tour'}
-                   }"
-                 class="title-link"
-                 >
-                  {{ post.title }}
-                </router-link>
+          <tbody>
+            <tr
+              v-for="(
+                post,
+                index
+              ) in pagedPosts"
+              :key="
+                post.feedId ||
+                `${post.source}:${post.id}`
+              "
+            >
+              <td class="num">
+                {{
+                  (currentPage - 1) *
+                    pageSize +
+                  index +
+                  1
+                }}
               </td>
 
-              <td class="category">{{ post.categoryName }}</td>
-              <td class="date">{{ formatDate(post.modifiedtime) }}</td>
+              <td class="title">
+                <RouterLink
+                  :to="{
+                    name: 'post-detail',
+
+                    params: {
+                      id: post.id,
+                    },
+
+                    query: {
+                      source:
+                        post.source,
+                    },
+                  }"
+                  class="title-link"
+                >
+                  {{ post.title }}
+                </RouterLink>
+              </td>
+
+              <td class="category">
+                {{ post.category }}
+              </td>
+
+              <td class="date">
+                {{
+                  formatDate(
+                    post.modifiedAt ||
+                    post.createdAt,
+                  )
+                }}
+              </td>
             </tr>
 
-            <tr v-if="allRecentPosts.length === 0">
-              <td colspan="4" class="empty">게시글이 없습니다.</td>
+            <tr
+              v-if="
+                allRecentPosts.length ===
+                0
+              "
+            >
+              <td
+                colspan="4"
+                class="empty"
+              >
+                게시글이 없습니다.
+              </td>
             </tr>
           </tbody>
         </table>
       </div>
 
-      <nav class="pagination" aria-label="페이지 네비게이션" v-if="totalPages > 1">
-        <div class="pager-left">
-          <button class="pager-btn" @click="firstPage" :disabled="isFirst" aria-label="맨 앞으로"><<</button>
-          <button class="pager-btn" @click="prevPage" :disabled="isFirst" aria-label="이전 페이지"><</button>
-        </div>
-
-        <ul class="pager-list" role="list">
-          <li v-for="p in pagerRange" :key="p">
-            <button
-              class="pager-number"
-              :class="{ active: p === currentPage }"
-              @click="gotoPage(p)"
-              :aria-current="p === currentPage ? 'page' : null"
-            >
-              {{ p }}
-            </button>
-          </li>
-        </ul>
-
-        <div class="pager-right">
-          <button class="pager-btn" @click="nextPage" :disabled="isLast" aria-label="다음 페이지">></button>
-          <button class="pager-btn" @click="lastPage" :disabled="isLast" aria-label="맨 마지막으로">>></button>
-        </div>
-      </nav>
+      <div
+        v-if="
+          !isLoading &&
+          !error &&
+          totalPages > 1
+        "
+        class="pagination-wrap"
+      >
+        <PaginationBar
+          :current-page="
+            currentPage
+          "
+          :total-pages="
+            totalPages
+          "
+          @change="gotoPage"
+        />
+      </div>
     </div>
   </section>
 </template>

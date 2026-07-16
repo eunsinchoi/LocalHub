@@ -306,7 +306,7 @@ onBeforeUnmount(() => {
 }
 
 .close-button:hover {
-  color: #c53030;
+  color: #c8323e;
   background: #f5f5f5;
 }
 
@@ -344,14 +344,14 @@ onBeforeUnmount(() => {
 }
 
 .password-input:focus {
-  border-color: #c53030;
+  border-color: #c8323e;
   box-shadow:
     0 0 0 3px
     rgba(197, 48, 48, 0.1);
 }
 
 .password-input.error {
-  border-color: #d92d20;
+  border-color: #c8323e;
 }
 
 .password-input::placeholder {
@@ -361,7 +361,7 @@ onBeforeUnmount(() => {
 .error-message {
   margin: 8px 0 0;
 
-  color: #d92d20;
+  color: #c8323e;
   font-size: 12px;
 }
 
@@ -400,13 +400,13 @@ onBeforeUnmount(() => {
 .confirm-button {
   color: #ffffff;
 
-  background: #c53030;
-  border: 1px solid #c53030;
+  background: #c8323e;
+  border: 1px solid #c8323e;
 }
 
 .confirm-button:hover {
-  background: #a92727;
-  border-color: #a92727;
+  background: #c8323e;
+  border-color: #c8323e;
 }
 
 button:disabled,
